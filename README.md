@@ -1,6 +1,8 @@
 # RbxMouse
 A clean mouse library using up-to-date input APIs. Only works on the client.
 
+**CURRENTLY NOT FUNCTIONAL***
+
 ## API
 ### Mouse Object
 This library returns a `Mouse` object which can be used similar to the official deprecated `Mouse` object.
