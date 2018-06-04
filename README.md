@@ -50,3 +50,24 @@ Button3ClickConnection:Disconnect()
 
 ### Methods
 The `Mouse` object has a number of methods for different features.
+
+#### *void* Mouse:Pause ( )
+Disconnects the `Mouse` object from all input signals. Useful if you want to disable mouse input detection.
+
+#### *void* Mouse:Resume ( )
+Reconnects the `Mouse` object to all input signals.
+
+#### *void* Mouse:Hide ( )
+Hides the mouse icon. Only needs to be called once.
+
+#### *void* Mouse:Show ( )
+Shows the mouse icon. Only needs to be called once.
+
+#### *void* Mouse:SetTargetFilter ( *<function/nil>* FilterFunction )
+Sets the function used to filter the `Target` property. If the `FilterFunction` argument is nil, it will remove the custom function and return the target filtering to its default state.
+
+##### *bool* FilterFunction ( *BasePart* Part )
+The filter function should return whether `Part` is able to be represented in the `Target` property.
+
+#### *void* SetIcon ( *<string/integer/nil>* AssetId )
+Sets the mouse icon to `AssetId`. Can be a full Roblox asset path, an asset ID on its own. If given nil, the icon is returned to its default.
