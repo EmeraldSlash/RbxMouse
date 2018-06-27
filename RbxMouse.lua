@@ -15,10 +15,52 @@ local LocalPlayer = Players.LocalPlayer
 local Vector2 = Vector2.new
 local CFrame = CFrame.new
 local Ray = Ray.new
+local New = Instance.new
 local RenderStepped = RunService.RenderStepped
 
 local CustomClickTimeout = nil
 local CustomRayDistance = nil
+
+local EventStorage = {}
+
+local EventObject = {} do
+	EventObject.__index = EventObject
+	
+	local Bindables = {}
+	
+	function EventObject.new(Id)
+		local NewEventObject = {}
+		setmetatable(NewEventObject, EventObject)		
+		
+		NewEventObject.Id = Id
+		
+		local Bindable = New("BindableEvent")
+		Bindables[Id] = Bindable
+		
+		return NewEventObject
+	end
+	
+	function EventObject:Connect(...)
+		return Bindables[self.Id].Event:Connect(...)
+	end
+	function EventObject:Wait(...)
+		return Bindables[self.Id].Event:Wait(...)
+	end
+	function EventObject:Fire(...)
+		return Bindables[self.Id]:Fire(...)
+	end
+end
+
+local function CreateEvent(Id)
+	local Event = EventStorage[Id]
+	
+	if not Event then
+		Event = EventObject.new(Id)
+		EventStorage[Id] = Event
+	end
+	
+	return Event
+end
 
 local TargetFilter = {} do
 	local FilterTable = {}
@@ -31,13 +73,13 @@ local TargetFilter = {} do
 		end
 	end
 	
-	function TargetFilter:AddObject(Object)
+	function TargetFilter:Add(Object)
 		if type(Object) ~= "table" then
 			table.insert(FilterTable, Object)
 		end
 	end
 	
-	function TargetFilter:RemoveObject(Object)
+	function TargetFilter:Remove(Object)
 		local ToRemove = {}
 		for Index, CurrentObject in pairs(FilterTable) do
 			if CurrentObject == Object then
@@ -54,12 +96,30 @@ local TargetFilter = {} do
 	end
 end
 
+local MouseIcon = {} do
+	local MouseObject = LocalPlayer:GetMouse()
+	
+	function MouseIcon:Set(Icon)
+		if type(Icon) == "number" then
+			Icon = "rbxassetid://" .. Icon
+		elseif Icon == nil then
+			Icon = ""
+		end
+		MouseObject.Icon = Icon
+	end
+	
+	function MouseIcon:Get()
+		return MouseObject.Icon
+	end
+end
+
 local World = {} do
 	local Camera = workspace.CurrentCamera
 	local CurrentRay, CurrentRayData
 	
 	local function MakeCurrentRay(Position)
-		CurrentRay = Camera:ScreenPointToRay(Position.X, Position.Y, (CustomRayDistance or RAY_DISTANCE))
+		local NewRay = Camera:ScreenPointToRay(Position.X, Position.Y)
+		CurrentRay = Ray(NewRay.Origin, NewRay.Direction * (CustomRayDistance or RAY_DISTANCE))
 		CurrentRayData = {workspace:FindPartOnRayWithIgnoreList(CurrentRay, TargetFilter:Get())}
 	end
 	
@@ -117,14 +177,12 @@ local MouseHider = {} do
 	end
 end
 
-local MouseStorage = {}
-
 local UserInput = {} do
 	local MouseInput = {} do
 		local ClickStart = {}		
 		
 		function MouseInput:Down(Number)
-			local Event = MouseStorage["Button" ..Number.. "Down"]
+			local Event = EventStorage["Button" ..Number.. "Down"]
 			if Event then
 				Event:Fire()
 			end
@@ -133,13 +191,13 @@ local UserInput = {} do
 		end
 		
 		function MouseInput:Up(Number)
-			local Event = MouseStorage["Button" ..Number.. "Up"]
+			local Event = EventStorage["Button" ..Number.. "Up"]
 			if Event then
 				Event:Fire()
 			end
 			
 			if (tick() - ClickStart[Number]) <= (CustomClickTimeout or DEFAULT_CLICK_TIMEOUT) then
-				local EventClick = MouseStorage["Button" ..Number.. "Click"]
+				local EventClick = EventStorage["Button" ..Number.. "Click"]
 				if EventClick then
 					EventClick:Fire()
 				end
@@ -148,9 +206,10 @@ local UserInput = {} do
 		end
 		
 		function MouseInput:Movement(Input)
-			local Event = MouseStorage["Move"]
+			local Event = EventStorage["Move"]
 			if Event then
-				local NewPosition = Vector2(Input.Position.X, Input.Position.Z)
+				local NewPosition = Vector2(Input.Position.X, Input.Position.Y)
+				print("Sent", NewPosition)
 				Event:Fire(NewPosition)
 			end
 		end
@@ -199,67 +258,10 @@ local UserInput = {} do
 end
 
 local Mouse = {} do
-	local MouseObject = LocalPlayer:GetMouse()
 	local WatchingCFrame, WatchingTarget = false, false
 	
-	local MouseEventCreator = {} do	
-		local MouseEvent = {} do
-			MouseEvent.__index = MouseEvent
-			
-			function MouseEvent.new()
-				local NewMouseEvent = {}
-				NewMouseEvent.Bindable = Instance.new("BindableEvent")
-				
-				setmetatable(NewMouseEvent, MouseEvent)
-				return NewMouseEvent
-			end			
-			
-			function MouseEvent:Connect(Function)
-				return self.Bindable.Event:Connect(Function)
-				--return setmetatable({}, MouseEventConnection)
-			end
-			
-			function MouseEvent:Fire()
-				return self.Bindable:Fire()
-			end
-		end
-		
-		function MouseEventCreator:CreateEvent(Id)
-			local Event = MouseStorage[Id]
-			
-			if Event == nil then
-				Event = MouseEvent.new(Id)
-				MouseStorage[Id] = Event
-			end
-			
-			return Event
-		end
-	end	
-	
-	--[[for Button = 1, 3 do
-		local DownId = "Button" ..Button.. "Down"
-		Mouse[DownId] = MouseEventCreator:CreateEvent(DownId)
-		local UpId = "Button" ..Button.. "Up"
-		Mouse[UpId] = MouseEventCreator:CreateEvent(UpId)
-		local ClickId = "Button" ..Button.. "Click"
-		Mouse[ClickId] = MouseEventCreator:CreateEvent(ClickId)
-	end]]
-	
-	function Mouse:SetTargetFilter(Function)
-		TargetFilter = Function
-	end
-	function Mouse:SetIcon(Icon)
-		if type(Icon) == "number" then
-			Icon = "rbxassetid://" .. Icon
-		elseif Icon == nil then
-			Icon = ""
-		end
-		MouseObject.Icon = Icon
-	end
-	
-	function Mouse:SetClickTimeout(Time)
-		CustomClickTimeout = (not Time and nil) or Time
-	end
+	Mouse.TargetFilter = TargetFilter
+	Mouse.Icon = MouseIcon
 	
 	function Mouse:Hide()
 		MouseHider:Resume()
@@ -274,8 +276,15 @@ local Mouse = {} do
 	function Mouse:Resume()
 		UserInput:Resume()
 	end
+	
+	function Mouse:SetClickTimeout(Time)
+		CustomClickTimeout = (not Time and nil) or Time
+	end
+	function Mouse:SetRayDistance(Distance)
+		CustomRayDistance = (not Distance and nil) or Distance
+	end
 		
-	local MoveEvent = MouseEventCreator:CreateEvent("Move")
+	local MoveEvent = CreateEvent("Move")
 	Mouse.Move = MoveEvent
 	Mouse.Position = Vector2()
 	
@@ -291,49 +300,59 @@ local Mouse = {} do
 		World:Reset()
 	end)
 	
-	setmetatable(Mouse, {
-		__index = function(self, String)
+	local HandleUndefinedRequest do		
+		local function HandlePropertyRequest(self, String)
 			if String == "CFrame" then
-				if WatchingCFrame then return end
 				WatchingCFrame = true
 				
-				local Value = World:GetCFrame(Mouse.Position)
-				Mouse.CFrame = Value
+				local Value = World:GetCFrame(self.Position)
+				self.CFrame = Value
 				
 				return Value			
 			elseif String == "Target" then
-				if WatchingTarget then return end
 				WatchingTarget = true
 				
-				local Value = World:GetTarget(Mouse.Position)
-				Mouse.Target = Value
-				
-				return Value
+				local Value = World:GetTarget(self.Position)
+				self.Target = Value
+					
+				return Value or false
 			elseif String == "Position" then
 				return Vector2()
-			end			
-			
-			local NewEvent
-			
-			if String == "Move" then
-				NewEvent = MouseEventCreator:CreateEvent(String)	
-			else
-				local Number, Type = string.match(String, "Button(%d+)(.+)")
-			
-				if (not Number or Number == "") or (not Type or Type == "") then
-					warn("[Mouse] " ..String.. " is not a valid mouse event.")
-					return
-				end
-				
-				NewEvent = MouseEventCreator:CreateEvent(String)	
 			end
+		end
+		
+		local function HandleEventRequest(self, String)
+			local NewEvent
+			local Number, Type = string.match(String, "Button(%d+)(.+)")
 			
+			if (not Number or Number == "") or (not Type or Type == "") then
+				warn("[Mouse] " ..String.. " is not a valid mouse event.")
+				return
+			end
+				
+			NewEvent = CreateEvent(String)
 			if NewEvent then
-				Mouse[String] = NewEvent
+				self[String] = NewEvent
 			end
 			
 			return NewEvent	
 		end
+		
+		HandleUndefinedRequest = function(...)
+			local Result = HandlePropertyRequest(...)
+			
+			if Result == nil then
+				Result = HandleEventRequest(...)
+			else
+				Result = nil
+			end
+			
+			return Result
+		end
+	end
+	
+	setmetatable(Mouse, {
+		__index = HandleUndefinedRequest
 	})
 end
 
