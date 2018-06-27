@@ -20,7 +20,7 @@ The 2D position of the mouse.
 ### *CFrame* CFrame
 The 3D position and direction of the mouse (see Configuration & `Mouse:SetRayDistance()`).
 
-### *BasePart/Nil* Target
+### *BasePart/nil* Target
 The part the mouse is over (see Configuration & `Mouse:SetRayDistance()`).
 
 ## Signals
@@ -83,8 +83,8 @@ Object that holds four methods for manipulating the filter for the `Mouse.Target
 ### Icon
 Object that holds two methods for manipulating the mouse icon:
 
-  - *void/string* TargetFilter:Get ()
-  - *void* TargetFilter:Set ( *<int/string>* AssetId )
+  - *void/string* Icon:Get ()
+  - *void* Icon:Set ( *<int/string>* AssetId )
 
 ## Constants
 Must be edited manually.
