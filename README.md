@@ -63,10 +63,10 @@ Hides the mouse. Only needs to be called once.
 ### *void* Mouse:Show ( )
 Shows the mouse. Only needs to be called once.
 
-### *void** Mouse:SetClickThreshold ( *<number>* ClickThreshold )
+### *void* Mouse:SetClickThreshold ( *<number>* ClickThreshold )
   The threshold for firing a click event between mouse down and up events. Defaults to `0.5`.
 
-### *void** Mouse:SetRayDistance ( *<number>* RayDistance )
+### *void* Mouse:SetRayDistance ( *<number>* RayDistance )
   The limit of mouse CFrame and Target detection. Defaults to `1000`.
 
 ## Children
