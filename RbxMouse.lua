@@ -75,7 +75,7 @@ local TargetFilter = {} do
 	
 	function TargetFilter:Add(Object)
 		if type(Object) ~= "table" then
-			table.insert(FilterTable, Object)
+			FilterTable[#FilterTable + 1] = Object
 		end
 	end
 	
@@ -83,7 +83,7 @@ local TargetFilter = {} do
 		local ToRemove = {}
 		for Index, CurrentObject in pairs(FilterTable) do
 			if CurrentObject == Object then
-				table.insert(ToRemove, Index)
+				ToRemove[#ToRemove + 1] = Index
 			end
 		end
 		for Position = 0, #ToRemove-1 do
@@ -153,7 +153,7 @@ local ButtonNumber = {} do
 			return Cache[InputType]
 		end		
 		
-		local Match = string.match(tostring(InputType), "MouseButton%d")
+		local Match = ("" .. InputType):match("MouseButton%d")
 		Match = tonumber(Match)
 		
 		if Match ~= nil then
@@ -182,7 +182,7 @@ local UserInput = {} do
 		local ClickStart = {}		
 		
 		function MouseInput:Down(Number)
-			local Event = EventStorage["Button" ..Number.. "Down"]
+			local Event = EventStorage["Button" .. Number .. "Down"]
 			if Event then
 				Event:Fire()
 			end
@@ -191,13 +191,13 @@ local UserInput = {} do
 		end
 		
 		function MouseInput:Up(Number)
-			local Event = EventStorage["Button" ..Number.. "Up"]
+			local Event = EventStorage["Button" .. Number .. "Up"]
 			if Event then
 				Event:Fire()
 			end
 			
 			if (tick() - ClickStart[Number]) <= (CustomClickThreshold or DEFAULT_CLICK_THRESHOLD) then
-				local EventClick = EventStorage["Button" ..Number.. "Click"]
+				local EventClick = EventStorage["Button" .. Number .. "Click"]
 				if EventClick then
 					EventClick:Fire()
 				end
@@ -323,10 +323,10 @@ local Mouse = {} do
 		
 		local function HandleEventRequest(self, String)
 			local NewEvent
-			local Number, Type = string.match(String, "Button(%d+)(.+)")
+			local Number, Type = String:match("Button(%d+)(.+)")
 			
 			if (not Number or Number == "") or (not Type or Type == "") then
-				warn("[Mouse] " ..String.. " is not a valid mouse event.")
+				warn("[Mouse] " .. String .. " is not a valid mouse event.")
 				return
 			end
 				
