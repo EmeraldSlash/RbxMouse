@@ -1,5 +1,5 @@
-local DEFAULT_CLICK_TIMEOUT = 0.5
-local RAY_DISTANCE = 1000
+local DEFAULT_CLICK_THRESHOLD = 0.5
+local DEFAULT_RAY_DISTANCE = 1000
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -18,7 +18,7 @@ local Ray = Ray.new
 local New = Instance.new
 local RenderStepped = RunService.RenderStepped
 
-local CustomClickTimeout = nil
+local CustomClickThreshold = nil
 local CustomRayDistance = nil
 
 local EventStorage = {}
@@ -119,7 +119,7 @@ local World = {} do
 	
 	local function MakeCurrentRay(Position)
 		local NewRay = Camera:ScreenPointToRay(Position.X, Position.Y)
-		CurrentRay = Ray(NewRay.Origin, NewRay.Direction * (CustomRayDistance or RAY_DISTANCE))
+		CurrentRay = Ray(NewRay.Origin, NewRay.Direction * (CustomRayDistance or DEFAULT_RAY_DISTANCE))
 		CurrentRayData = {workspace:FindPartOnRayWithIgnoreList(CurrentRay, TargetFilter:Get())}
 	end
 	
@@ -196,7 +196,7 @@ local UserInput = {} do
 				Event:Fire()
 			end
 			
-			if (tick() - ClickStart[Number]) <= (CustomClickTimeout or DEFAULT_CLICK_TIMEOUT) then
+			if (tick() - ClickStart[Number]) <= (CustomClickThreshold or DEFAULT_CLICK_THRESHOLD) then
 				local EventClick = EventStorage["Button" ..Number.. "Click"]
 				if EventClick then
 					EventClick:Fire()
@@ -277,8 +277,8 @@ local Mouse = {} do
 		UserInput:Resume()
 	end
 	
-	function Mouse:SetClickTimeout(Time)
-		CustomClickTimeout = (not Time and nil) or Time
+	function Mouse:SetClickThreshold(Time)
+		CustomClickThreshold = (not Time and nil) or Time
 	end
 	function Mouse:SetRayDistance(Distance)
 		CustomRayDistance = (not Distance and nil) or Distance
