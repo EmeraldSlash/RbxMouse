@@ -76,9 +76,10 @@ Child objects that can be indexed using `Mouse.ChildName`.
 Object that holds four methods for manipulating the filter for the `Mouse.Target` property:
 
   - *array<Instance>* TargetFilter:Get ()
-  - *void* TargetFilter:Set ( *<array<Instance>/Instance/nil>* IgnoreDescendantsInstance )
-  - *void* TargetFilter:Add ( *<Instance>* IgnoreDescendantsInstance )
-  - *void* TargetFilter:Remove ( *<Instance>* IgnoreDescendantsInstance )
+  - *void* TargetFilter:Set ( *\<array\<Instance\>/Instance/nil\>* IgnoreDescendantsInstance )
+  
+  - *void* TargetFilter:Add ( *\<Instance\>* IgnoreDescendantsInstance )
+  - *void* TargetFilter:Remove ( *\<Instance\>* IgnoreDescendantsInstance )
   
 ### Icon
 Object that holds two methods for manipulating the mouse icon:
