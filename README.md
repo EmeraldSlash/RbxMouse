@@ -1,31 +1,29 @@
 # RbxMouse
 A clean mouse library using up-to-date input APIs. Only works on the client.
 
-**CURRENTLY NOT FUNCTIONAL***
-
-## API
-### Mouse Object
+# API
+## Mouse Object
 This library returns a `Mouse` object which can be used similar to the official deprecated `Mouse` object.
 
 ```lua
 local Mouse = require(script.RbxMouse)
 ```
 
-### Properties
-This `Mouse` object has a lot of similar properties. I am intending to make it so that these properties will not be updated until they have been used.
+Certain features will only start running if used (e.g. `Mouse.CFrame` is indexed).
 
-**TO DO EVERYTHING HERE**
+## Properties
+This `Mouse` object has a lot of similar properties. The CFrame and Target properties will not be up
 
-#### *Vector2* Position
+### *Vector2* Position
 The 2D position of the mouse.
 
-#### *CFrame* CFrame
-The 3D position and direction of the mouse.
+### *CFrame* CFrame
+The 3D position and direction of the mouse (see Configuration & `Mouse:SetRayDistance()`).
 
-#### *BasePart* Target
-The part the mouse is over.
+### *BasePart/Nil* Target
+The part the mouse is over (see Configuration & `Mouse:SetRayDistance()`).
 
-### Signals
+## Signals
 The `Mouse` object contains signals that can be treated exactly like `RbxScriptSignals`.
 
 There are three signals for every mouse button:
@@ -33,7 +31,7 @@ There are three signals for every mouse button:
 - Button`X`Up
 - Button`X`Click
 
-The `ButtonXClick` event will fire if `ButtonXUp` is fired less than or exactly 0.5 seconds after `ButtonXDown`. This length can be modified in the library during runtime through the `SetClickTimeout` method or through changing the `DEFAULT_CLICK_TIMEOUT` variable in the source code.
+The `ButtonXClick` event will fire if `ButtonXUp` is fired less than or exactly 0.5\* seconds after `ButtonXDown` (see Configuration & `Mouse:SetClickThreshold()`).
 
 Example usage:
 ```lua
@@ -50,26 +48,49 @@ Mouse.Button2Up:Wait()
 Button3ClickConnection:Disconnect()
 ```
 
-### Methods
+## Methods
 The `Mouse` object has a number of methods for different features.
 
-#### *void* Mouse:Pause ( )
+### *void* Mouse:Pause ( )
 Disconnects the `Mouse` object from all input signals. Useful if you want to disable mouse input detection.
 
-#### *void* Mouse:Resume ( )
+### *void* Mouse:Resume ( )
 Reconnects the `Mouse` object to all input signals.
 
-#### *void* Mouse:Hide ( )
-Hides the mouse icon. Only needs to be called once.
+### *void* Mouse:Hide ( )
+Hides the mouse. Only needs to be called once.
 
-#### *void* Mouse:Show ( )
-Shows the mouse icon. Only needs to be called once.
+### *void* Mouse:Show ( )
+Shows the mouse. Only needs to be called once.
 
-#### *void* Mouse:SetTargetFilter ( *<function/nil>* FilterFunction )
-Sets the function used to filter the `Target` property. If the `FilterFunction` argument is nil, it will remove the custom function and return the target filtering to its default state.
+### *void** Mouse:SetClickThreshold ( *<number>* ClickThreshold )
+  The threshold for firing a click event between mouse down and up events. Defaults to `0.5`.
 
-##### *bool* FilterFunction ( *BasePart* Part )
-The filter function should return whether `Part` is able to be represented in the `Target` property.
+### *void** Mouse:SetRayDistance ( *<number>* RayDistance )
+  The limit of mouse CFrame and Target detection. Defaults to `1000`.
 
-#### *void* SetIcon ( *<string/integer/nil>* AssetId )
-Sets the mouse icon to `AssetId`. Can be a full Roblox asset path, an asset ID on its own. If given nil, the icon is returned to its default.
+## Children
+Child objects that can be indexed using `Mouse.ChildName`.
+
+### TargetFilter
+Object that holds four methods for manipulating the filter for the `Mouse.Target` property:
+
+  - *array<Instance>* TargetFilter:Get ()
+  - *void* TargetFilter:Set ( *<array<Instance>/Instance/nil>* IgnoreDescendantsInstance )
+  - *void* TargetFilter:Add ( *<Instance>* IgnoreDescendantsInstance )
+  - *void* TargetFilter:Remove ( *<Instance>* IgnoreDescendantsInstance )
+  
+### Icon
+Object that holds two methods for manipulating the mouse icon:
+
+  - *void/string* TargetFilter:Get ()
+  - *void* TargetFilter:Set ( *<int/string>* AssetId )
+
+## Constants
+Must be edited manually.
+
+### *number* DEFAULT_CLICK_TIMEOUT
+The threshold for firing a click event between mouse down and up events. Defaults to `0.5`.
+
+### *number* DEFAULT_RAY_DISTANCE
+The limit of mouse CFrame and Target detection. Defaults to `1000`.
