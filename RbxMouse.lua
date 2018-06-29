@@ -15,7 +15,10 @@ local LocalPlayer = Players.LocalPlayer
 local Vector2 = Vector2.new
 local CFrame = CFrame.new
 local Ray = Ray.new
-local New = Instance.new
+local Instance = Instance.new
+
+local UserInputType = Enum.UserInputType
+local UserInputMove = UserInputType.MouseMovement
 local RenderStepped = RunService.RenderStepped
 
 local CustomClickThreshold = nil
@@ -34,7 +37,7 @@ local EventObject = {} do
 		
 		NewEventObject.Id = Id
 		
-		local Bindable = New("BindableEvent")
+		local Bindable = Instance("BindableEvent")
 		Bindables[Id] = Bindable
 		
 		return NewEventObject
@@ -209,7 +212,6 @@ local UserInput = {} do
 			local Event = EventStorage["Move"]
 			if Event then
 				local NewPosition = Vector2(Input.Position.X, Input.Position.Y)
-				print("Sent", NewPosition)
 				Event:Fire(NewPosition)
 			end
 		end
@@ -218,7 +220,7 @@ local UserInput = {} do
 	local function InputBeginFunction(Input)
 		local Type = Input.UserInputType
 		local Number = ButtonNumber:Get(Type)
-		if Type == Enum.UserInputType.MouseMovement then
+		if Type == UserInputMove then
 			MouseInput:Movement(Input)
 		elseif Number ~= nil then
 			MouseInput:Down(Number)
@@ -228,7 +230,7 @@ local UserInput = {} do
 	local function InputEndFunction(Input)
 		local Type = Input.UserInputType
 		local Number = ButtonNumber:Get(Type)
-		if Type == Enum.UserInputType.MouseMovement then
+		if Type == UserInputMove then
 			MouseInput:Movement(Input)
 		elseif Number ~= nil then
 			MouseInput:Up(Number)
@@ -236,7 +238,7 @@ local UserInput = {} do
 	end
 	
 	local function InputChangeFunction(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseMovement then
+		if Input.UserInputType == UserInputMove then
 			MouseInput:Movement(Input)
 		end
 	end
