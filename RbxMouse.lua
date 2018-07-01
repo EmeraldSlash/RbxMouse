@@ -131,7 +131,7 @@ local World = {} do
 			MakeCurrentRay(Position)
 		end
 		
-		return CurrentRayData[2] or CFrame()
+		return CFrame(CurrentRayData[2])
 	end
 	
 	function World:GetTarget(Position)
