@@ -38,7 +38,7 @@ local EventObject = {} do
 		NewEventObject.Id = Id
 		
 		local Bindable = Instance("BindableEvent")
-		Bindables[Id] = Bindable
+		Bindables[Id] = Bindable		
 		
 		return NewEventObject
 	end
@@ -89,8 +89,8 @@ local TargetFilter = {} do
 				table.insert(ToRemove, Index)
 			end
 		end
-		for Position = 0, #ToRemove-1 do
-			table.remove(FilterTable, ToRemove[Position] - Position)
+		for Position = 1, #ToRemove do
+			table.remove(FilterTable, ToRemove[Position] - (Position-1))
 		end
 	end
 
@@ -131,7 +131,7 @@ local World = {} do
 			MakeCurrentRay(Position)
 		end
 		
-		return CFrame(CurrentRayData[2])
+		return CFrame(CurrentRayData[2], CurrentRay.Unit.Direction) or CFrame()
 	end
 	
 	function World:GetTarget(Position)
@@ -156,7 +156,7 @@ local ButtonNumber = {} do
 			return Cache[InputType]
 		end		
 		
-		local Match = string.match(tostring(InputType), "MouseButton%d")
+		local Match = string.match(tostring(InputType), "MouseButton(%d)")
 		Match = tonumber(Match)
 		
 		if Match ~= nil then
@@ -219,7 +219,8 @@ local UserInput = {} do
 	
 	local function InputBeginFunction(Input)
 		local Type = Input.UserInputType
-		local Number = ButtonNumber:Get(Type)
+		local Number = ButtonNumber:Get(Type)	
+		
 		if Type == UserInputMove then
 			MouseInput:Movement(Input)
 		elseif Number ~= nil then
@@ -325,7 +326,7 @@ local Mouse = {} do
 		
 		local function HandleEventRequest(self, String)
 			local NewEvent
-			local Number, Type = string.match(String, "Button(%d+)(.+)")
+			local Number, Type = string.match(String, "Button(%d+)(.+)")		
 			
 			if (not Number or Number == "") or (not Type or Type == "") then
 				warn("[Mouse] " ..String.. " is not a valid mouse event.")
