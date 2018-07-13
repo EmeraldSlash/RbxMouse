@@ -21,7 +21,7 @@ The 2D position of the mouse.
 The 3D position and direction of the mouse (see Configuration & `Mouse:SetRayDistance()`).
 
 ### *BasePart/nil* Target
-The part the mouse is over (see Configuration & `Mouse:SetRayDistance()`).
+The part the mouse is over (see Constants).
 
 ## Signals
 The `Mouse` object contains signals that can be treated exactly like `RbxScriptSignals`.
@@ -31,7 +31,7 @@ There are three signals for every mouse button:
 - Button`X`Up
 - Button`X`Click
 
-The `ButtonXClick` event will fire if `ButtonXUp` is fired less than or exactly 0.5\* seconds after `ButtonXDown` (see Configuration & `Mouse:SetClickThreshold()`).
+The `ButtonXClick` event will fire if `ButtonXUp` is fired less than or exactly 0.5 seconds after `ButtonXDown` (see Constants).
 
 Example usage:
 ```lua
@@ -91,7 +91,7 @@ Object that holds two methods for manipulating the mouse icon:
 Must be edited manually.
 
 ### *number* DEFAULT_CLICK_TIMEOUT
-The threshold for firing a click event between mouse down and up events. Defaults to `0.5`.
+The threshold for firing a click event between mouse down and up events. Defaults to `0.5`. Custom click timeout can be set at runtime with `Mouse:SetClickThreshold()`.
 
 ### *number* DEFAULT_RAY_DISTANCE
-The limit of mouse CFrame and Target detection. Defaults to `1000`.
+The limit of mouse CFrame and Target detection. Defaults to `1000`. Custom ray distance can be set at runtime with `Mouse:SetRayDistance()`.
