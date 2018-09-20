@@ -3,17 +3,36 @@ A clean mouse object using up-to-date input APIs. Only works on the client, and 
 
 The mouse object can be configured in the Configuration module. This will allow you to disable things such as the Target property and the RbxTargetFilter object, and change values such as the length of the ray being cast for the CFrame and Target properties.
 
-# API Reference
-
-## RbxMouse
-This module returns a `RbxMouse` object which can be used similar to the official `Mouse` object.
+Example usage:
 
 ```lua
 local Mouse = require(script.RbxMouse)
+
+Mouse.TargetFilter:Add(workspace.Part)
+Mouse.Icon:Set(12345678)
+
+local leftMouseButton = Mouse.Button[1]
+leftMouseButton.Down:Connect(function()
+    print("Left mouse button pressed!")
+end
+
+local rightMouseButton = Mouse.Button.Right
+rightMouseButton.Click:Connect(function(timeSpentDown))
+    print("Right mouse button clicked!")
+end
+
+Mouse.Move:Connect(function(newPosition)
+    print("Left mouse button is down =", leftMouseButton.IsDown)
+    print("Current mouse target is", Mouse.Target)
+end
 ```
 
+# API Reference
+## RbxMouse
+This module returns a `RbxMouse` object which can be used similar to the official `Mouse` object.
+
 ### Children
-#### Button
+#### *RbxMouseButton* RbxMouse.Button
 Object that holds 3 `RbxMouseButton` objects, one for each of the 3 buttons on a mouse.
 They can be indexed either by their number (1, 2, 3) or their name/position (Left, Right, Middle).
 
@@ -28,65 +47,40 @@ Mouse.Button[3]
 Mouse.Button.Middle
 ```
 
-#### Icon
+#### *RbxMouseIcon* RbxMouse.Icon
 `RbxMouseIcon` object for the mouse.
 
-#### TargetFilter
+#### *RbxTargetFilter* RbxMouse.TargetFilter
 `RbxTargetFilter` for the mouse. Will throw an exception if target is disabled in configuration.
 
-## Properties
+### Properties
 This `Mouse` object has a lot of similar properties.
 
-### *Vector2* Mouse.Position
+#### *Vector2* Mouse.Position
 The 2D position of the mouse.
 
-### *CFrame* Mouse.CFrame
+#### *CFrame* Mouse.CFrame
 The 3D position and direction of the mouse.
 
-### *BasePart/nil* Mouse.Target
+#### *BasePart/nil* Mouse.Target
 The BasePart the mouse is hovering over. Will throw an exception if target is disabled in configuration.
 
-## Signals
-### Mouse.Move ( *Vector2* Position )
+### Signals
+#### Mouse.Move ( *Vector2* Position )
 Fires every time the mouse is moved. The position of the mouse is passed to the callback function.
 
-## Methods
-### Mouse:Hide ( )
+### Methods
+#### Mouse:Hide ( )
 Hides the mouse icon. Only needs to be called once.
 
-### Mouse:Show ( )
+#### Mouse:Show ( )
 Shows the mouse icon. Only needs to be called once.
 
-### Mouse:Disable ( )
+#### Mouse:Disable ( )
 Disconnects all input listeners without removing your connections. Useful if you want to put the Mouse's properties into a static state, or if you want to stop listening for Mouse input.
 
-### Mouse:Enable ( )
+#### Mouse:Enable ( )
 Reconnects all input listeners.
-
-## Signals
-The `Mouse` object contains signals that can be treated exactly like `RbxScriptSignals`.
-
-There are three signals for every mouse button:
-- Button`X`Down
-- Button`X`Up
-- Button`X`Click
-
-The `ButtonXClick` event will fire if `ButtonXUp` is fired less than or exactly 0.5 seconds after `ButtonXDown` (see Constants).
-
-Example usage:
-```lua
-Mouse.Button1Down:Connect(function()
-  print("Left mouse button is down!")
-end)
-
-local Button3ClickConnection = Mouse.Button3Click:Connect(function()
-  print("Middle mouse button has been clicked!")
-end)
-
-Mouse.Button2Up:Wait()
-
-Button3ClickConnection:Disconnect()
-```
 
 ## RbxMouseButton
 A `RbxMouseButton` objects represents one of the buttons on a mouse.
