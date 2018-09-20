@@ -8,10 +8,11 @@ local UIT_MOUSE_MOVEMENT = Enum.UserInputType.MouseMovement
 local Input = require(script:WaitForChild("Input"))
 
 local children = {} do
-    children.Button = require(script:WaitForChild("Button"))
+    children.Button = require(script:WaitForChild("RbxMouseButton"))
+    Children.Icon = require(script:WaitForChild("RbxMouseIcon"))
 
     if CONFIG.TargetEnabled then
-        children.TargetFilter = require(script:WaitForChild("TargetFilter"))
+        children.TargetFilter = require(script:WaitForChild("RbxTargetFilter"))
     end
 end
 
@@ -45,11 +46,20 @@ local signals = {} do
 end
 
 local methods = {} do
+
     methods.Hide = function(self)
         MouseIcon.hide()
     end
     methods.Show = function(self)
         MouseIcon.show()
+    end
+
+    methods.SetIcon = function(self, id)
+        MouseIcon.set(id)
+    end
+
+    methods.GetIcon = function(self, id)
+        z
     end
 
     methods.Enable = function(self)
@@ -81,7 +91,8 @@ local RbxMouse = {} do
             if member then return member end
 
             error(tostring(index).. " is not a valid member of RbxMouse")
-        end
+        end,
+        __newindex = function() end
     })
 end
 

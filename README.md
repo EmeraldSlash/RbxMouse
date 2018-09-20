@@ -1,27 +1,67 @@
-# RbxMouse
-A clean mouse library using up-to-date input APIs. Only works on the client.
+# RbxMouse v2.0
+A clean mouse object using up-to-date input APIs. Only works on the client, and there should only be one instance of this object running at one point in time.
 
-# API
-## Mouse Object
-This library returns a `Mouse` object which can be used similar to the official deprecated `Mouse` object.
+The mouse object can be configured in the Configuration module. This will allow you to disable things such as the Target property and the RbxTargetFilter object, and change values such as the length of the ray being cast for the CFrame and Target properties.
+
+# API Reference
+
+## RbxMouse
+This module returns a `RbxMouse` object which can be used similar to the official `Mouse` object.
 
 ```lua
 local Mouse = require(script.RbxMouse)
 ```
 
-Certain features will only start running if used (e.g. `Mouse.CFrame` is indexed).
+### Children
+#### Button
+Object that holds 3 `RbxMouseButton` objects, one for each of the 3 buttons on a mouse.
+They can be indexed either by their number (1, 2, 3) or their name/position (Left, Right, Middle).
+
+```lua
+Mouse.Button[1]
+Mouse.Button.Left
+
+Mouse.Button[2]
+Mouse.Button.Right
+
+Mouse.Button[3]
+Mouse.Button.Middle
+```
+
+#### Icon
+`RbxMouseIcon` object for the mouse.
+
+#### TargetFilter
+`RbxTargetFilter` for the mouse. Will throw an exception if target is disabled in configuration.
 
 ## Properties
-This `Mouse` object has a lot of similar properties. The CFrame and Target properties will not be up
+This `Mouse` object has a lot of similar properties.
 
-### *Vector2* Position
+### *Vector2* Mouse.Position
 The 2D position of the mouse.
 
-### *CFrame* CFrame
-The 3D position and direction of the mouse (see Configuration & `Mouse:SetRayDistance()`).
+### *CFrame* Mouse.CFrame
+The 3D position and direction of the mouse.
 
-### *BasePart/nil* Target
-The part the mouse is over (see Constants).
+### *BasePart/nil* Mouse.Target
+The BasePart the mouse is hovering over. Will throw an exception if target is disabled in configuration.
+
+## Signals
+### Mouse.Move ( *Vector2* Position )
+Fires every time the mouse is moved. The position of the mouse is passed to the callback function.
+
+## Methods
+### Mouse:Hide ( )
+Hides the mouse icon. Only needs to be called once.
+
+### Mouse:Show ( )
+Shows the mouse icon. Only needs to be called once.
+
+### Mouse:Disable ( )
+Disconnects all input listeners without removing your connections. Useful if you want to put the Mouse's properties into a static state, or if you want to stop listening for Mouse input.
+
+### Mouse:Enable ( )
+Reconnects all input listeners.
 
 ## Signals
 The `Mouse` object contains signals that can be treated exactly like `RbxScriptSignals`.
@@ -48,50 +88,58 @@ Mouse.Button2Up:Wait()
 Button3ClickConnection:Disconnect()
 ```
 
-## Methods
-The `Mouse` object has a number of methods for different features.
+## RbxMouseButton
+A `RbxMouseButton` objects represents one of the buttons on a mouse.
 
-### *void* Mouse:Pause ( )
-Disconnects the `Mouse` object from all input signals. Useful if you want to disable mouse input detection.
+### Properties
+#### *bool* RbxMouseButton.IsDown
+Whether the button is being pressed or not.
 
-### *void* Mouse:Resume ( )
-Reconnects the `Mouse` object to all input signals.
+### Signals
+#### RbxMouseButton.Down
+Fired when the button is pressed.
 
-### *void* Mouse:Hide ( )
-Hides the mouse. Only needs to be called once.
+#### RbxMouseButton.Up
+Fired when the button is released.
 
-### *void* Mouse:Show ( )
-Shows the mouse. Only needs to be called once.
+#### RbxMouseButton.Click
+Fired when the button is released if the time the button was spent down was smaller than or equal to the click threshold (defaults to 0.5 seconds, can be configured in the configuration module).
 
-### *void* Mouse:SetClickThreshold ( *<number>* ClickThreshold )
-  The threshold for firing a click event between mouse down and up events. Defaults to `0.5`.
+### Methods
+#### RbxMouseButton:ForceDown ( )
+Forces the button to be pressed. The button will still be considered released when the user stops pressing the button.
 
-### *void* Mouse:SetRayDistance ( *<number>* RayDistance )
-  The limit of mouse CFrame and Target detection. Defaults to `1000`.
+#### RbxMouseButton:ForceUp ( )
+Forces the button to be released. The button will still be considered pressed when the user presses the button.
 
-## Children
-Child objects that can be indexed using `Mouse.ChildName`.
+## RbxMouseIcon
+A `RbxMouseIcon` object is responsible for the mouse icon.
 
-### TargetFilter
-Object that holds four methods for manipulating the filter for the `Mouse.Target` property:
+### Methods
+#### RbxMouseIcon:Show ( )
+Shows the mouse icon. Only needs to be called once.
 
-  - *array<Instance>* TargetFilter:Get ()
-  - *void* TargetFilter:Set ( *\<array\<Instance\>/Instance/nil\>* IgnoreDescendantsInstance )
-  
-  - *void* TargetFilter:Add ( *\<Instance\>* IgnoreDescendantsInstance )
-  - *void* TargetFilter:Remove ( *\<Instance\>* IgnoreDescendantsInstance )
-  
-### Icon
-Object that holds two methods for manipulating the mouse icon:
+#### RbxMouseIcon:Hide ( )
+Hides the mouse icon. Only needs to be called once.
 
-  - *void/string* Icon:Get ()
-  - *void* Icon:Set ( *<int/string>* AssetId )
+#### RbxMouseIcon:Set ( *int/string* AssetId )
+Sets the mouse icon to an image asset path. If `AssetId` is an int, it will convert it into a valid path before setting it. Call it with nil or an empty string to reset the icon.
 
-## Constants
-Must be edited manually.
+#### RbxMouseIcon:Get ( )
+Returns the current mouse icon asset ID. Returns an empty string if it has not been set.
 
-### *number* DEFAULT_CLICK_TIMEOUT
-The threshold for firing a click event between mouse down and up events. Defaults to `0.5`. Custom click timeout can be set at runtime with `Mouse:SetClickThreshold()`.
+## RbxTargetFilter
+A `RbxTargetFilter` objects is responsible for managing the objects in the mouse's target filter. A target filter is an array that cannot hold more than one reference to the same `Instance` at the same time.
 
-### *number* DEFAULT_RAY_DISTANCE
-The limit of mouse CFrame and Target detection. Defaults to `1000`. Custom ray distance can be set at runtime with `Mouse:SetRayDistance()`.
+### Methods
+#### RbxTargetFilter:Set ( *array<Instance>/Instance* Objects )
+Sets the target filter to an array (overwriting the old target filter). If the `Object` argument is an `Instance`, it will create an array and insert the `Instance` into the array. If there are duplicate references, only one will be used.
+
+#### RbxTargetFilter:Get ( )
+Returns the array of objects in the target filter.
+
+#### RbxTargetFilter:Add ( *Instance* Object )
+Adds an object into the target filter. If this will cause duplicate references, it will not be added.
+
+#### RbxTargetFilter:Remove ( *Instance* Object )
+Removes an instance from the target filter.

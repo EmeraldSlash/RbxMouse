@@ -73,12 +73,13 @@ local makeNewButton = function(buttonId)
             if method then return method end
 
             error(tostring(index).. " is not a valid member of RbxMouseButton")
-        end
+        end,
+        __newindex = function() end
     })
 end
 
-local Button = {} do
-    setmetatable(Button, {
+local RbxMouseButtonContainer = {} do
+    setmetatable(RbxMouseButtonContainer, {
         __index = function(self, index)
             local buttonId =
                 ((index == 1 or index == "Left") and 1) or
@@ -90,8 +91,9 @@ local Button = {} do
                 buttons[ButtonId] = makeNewButton(buttonId)
             end
             return buttons[ButtonId]
-        end
+        end,
+        __newindex = function() end
     })
 end
 
-return Button
+return RbxMouseButtonContainer
