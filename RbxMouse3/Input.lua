@@ -1,6 +1,6 @@
 local CONFIG = require(script.Parent:WaitForChild("Configuration"))
-local UIT_Touch = Enum.UserInputType.Touch
-local UIT_Button1 = Enum.UserInputType.MouseButton1
+local UIT_TOUCH = Enum.UserInputType.Touch
+local UIT_BUTTON1 = Enum.UserInputType.MouseButton1
 
 local boundActions = {}
 local boundBinaryActions = {}
@@ -10,8 +10,8 @@ local connectionBegin, connectionEnd, connectionChanged
 local callbackBegan, callbackEnded, callbackChanged do
     callbackBegan = function(inputObject)
         local input = inputObject.UserInputType
-        if (CONFIG.DetectTouchAsButton1 and input == UIT_Touch) then
-            inputValue = UIT_Button1
+        if (CONFIG.DetectTouchAsButton1 and input == UIT_TOUCH) then
+            inputValue = UIT_BUTTON1
         then
 
         local inputCallbacks = boundActions[input]
@@ -31,8 +31,8 @@ local callbackBegan, callbackEnded, callbackChanged do
 
     callbackEnded = function(inputObject)
         local input = inputObject.UserInputType
-        if (CONFIG.DetectTouchAsButton1 and input == UIT_Touch) then
-            input = UIT_Button1
+        if (CONFIG.DetectTouchAsButton1 and input == UIT_TOUCH) then
+            input = UIT_BUTTON1
         then
 
         local inputBinaryCallbacks = boundBinaryActions[input]
@@ -73,17 +73,19 @@ local Input = {} do
         table.insert(boundChangeActions[action], callback)
     end
 
-    Input.pause = function()
+    Input.disable = function()
         connectionBegan:Disconnect()
         connectionEnded:Disconnect()
         connectionChanged:Disconnect()
     end
 
-    Input.resume = function()
+    Input.enable = function()
         connectionBegan = UserInputService.InputBegan:Connect(callbackBegan)
         connectionEnded = UserInputService.InputEnded:Connect(callbackEnded)
         connectionChanged = UserInputService.InputChanged:Connect(callbackChanged)
     end
+
+    Input.enable()
 end
 
 return Input

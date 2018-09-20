@@ -3,12 +3,9 @@ if not game:GetService("RunService"):IsClient() then
 end
 
 local CONFIG = require(script:WaitForChild("Configuration"))
-local UIT_MouseMovement = Enum.UserInputType.MouseMovement
+local UIT_MOUSE_MOVEMENT = Enum.UserInputType.MouseMovement
 
 local Input = require(script:WaitForChild("Input"))
-
--- TODO mouse icon stuff
--- TODO top-level input pausing
 
 local children = {} do
     children.Button = require(script:WaitForChild("Button"))
@@ -24,7 +21,7 @@ local properties = {} do
     properties.Position = Vector2.new()
     properties.CFrame = CFrame.new()
 
-    Input.bindActionChange(UIT_MouseMovement, function(inputObject)
+    Input.bindActionChange(UIT_MOUSE_MOVEMENT, function(inputObject)
         properties.Position = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
         MouseRay.new(properties.Position, children.TargetFilter:Get())
         properties.CFrame = MouseRay.getCFrame()
@@ -32,7 +29,7 @@ local properties = {} do
 
     if CONFIG.TargetEnabled then
         properties.Target = nil
-        Input.bindAction(UIT_MouseMovement, function()
+        Input.bindAction(UIT_MOUSE_MOVEMENT, function()
             properties.Target = MouseRay.getTarget()
         end)
     end
@@ -42,9 +39,25 @@ local signals = {} do
     local Signal = require(script:WaitForChild("Signal"))
 
     signals.Move = Signal.new()
-    Input.bindAction(UIT_MouseMovement, function()
+    Input.bindAction(UIT_MOUSE_MOVEMENT, function()
         signals.Move:Fire(properties.Position)
     end)
+end
+
+local methods = {} do
+    methods.Hide = function(self)
+        MouseIcon.hide()
+    end
+    methods.Show = function(self)
+        MouseIcon.show()
+    end
+
+    methods.Enable = function(self)
+        Input.enable()
+    end
+    methods.Disable = function(self)
+        Input.disable()
+    end
 end
 
 local RbxMouse = {} do
