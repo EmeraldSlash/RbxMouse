@@ -1,6 +1,6 @@
 local CONFIG = require(script.Parent:WaitForChild("Configuration"))
 
-local Signal = require(script.Parent:WaitForChild("Signal"))
+local Input = require(script.Parent:WaitForChild("Input"))
 
 local buttons = {}
 
@@ -15,14 +15,11 @@ local makeNewButton = function(buttonId)
             (buttonId == 3 and "Middle")
 
         properties.IsDown = false
-        Input.bindActionBinary(buttonInputType, function(isBegin)
-            properties.IsDown = isBegin
-        end
     end
 
     local signals = {} do
-        signals.Down = Signal.new()
-        signals.Up = Signal.new()
+        signals.Down = Instance.new("BindableEvent")
+        signals.Up = Instance.new("BindableEvent")
 
         Input.bindActionBinary(buttonInputType, function(isBegin)
             if isBegin and not properties.IsDown then
@@ -34,17 +31,17 @@ local makeNewButton = function(buttonId)
             end
         end)
 
-        signal.Click = Signal.new() do
+        signals.Click = Instance.new("BindableEvent") do
             local wentDownAt
 
-            signal.Down.Event:Connect(function()
+            signals.Down.Event:Connect(function()
                 wentDownAt = tick()
-            end
-            signal.Up.Event:Connect(function()
+            end)
+            signals.Up.Event:Connect(function()
                 local timeSpentDown = tick() - wentDownAt
                 if timeSpentDown > CONFIG.ClickThreshold then return end
-                signal.Click:Fire(timeSpentDown)
-            end
+                signals.Click:Fire(timeSpentDown)
+            end)
         end
     end
 
@@ -61,21 +58,25 @@ local makeNewButton = function(buttonId)
         end
     end
 
-    local newButton = setmetatable(newButton, {
-        __index = function(self, index)
-            local property = properties[index]
-            if property then return property end
+    local newButton = {} do
+		setmetatable(newButton, {
+	        __index = function(self, index)
+	            local property = properties[index]
+	            if property then return property end
 
-            local signal = signals[index]
-            if signal then return signal end
+	            local signal = signals[index]
+	            if signal then return signal.Event end
 
-            local method = methods[index]
-            if method then return method end
+	            local method = methods[index]
+	            if method then return method end
 
-            error(tostring(index).. " is not a valid member of RbxMouseButton")
-        end,
-        __newindex = function() end
-    })
+	            error(tostring(index).. " is not a valid member of RbxMouseButton")
+	        end,
+	        __newindex = function() end
+		})
+	end
+
+	return newButton
 end
 
 local RbxMouseButtonContainer = {} do
@@ -88,9 +89,9 @@ local RbxMouseButtonContainer = {} do
 
             if not buttonId then error(tostring(index).. " is not a valid mouse button") end
             if not buttons[buttonId] then
-                buttons[ButtonId] = makeNewButton(buttonId)
+                buttons[buttonId] = makeNewButton(buttonId)
             end
-            return buttons[ButtonId]
+            return buttons[buttonId]
         end,
         __newindex = function() end
     })

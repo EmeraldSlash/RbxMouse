@@ -36,7 +36,7 @@ local RbxTargetFilter = {} do
     setmetatable(RbxTargetFilter, {
         __index = function(self, index)
             local method = methods[index]
-            if not method then return end
+            if method then return method end
 
             error(tostring(index).. " is not a valid member of RbxTargetFilter")
         end,

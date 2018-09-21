@@ -9,7 +9,7 @@ local MouseRay = {} do
 
     MouseRay.new = function(position, targetFilter)
         local newRay = Camera:ScreenPointToRay(position.X, position.Y) do
-            newRay = Ray(newRay.Origin, newRay.Direction * (CONFIG.RayDistance))
+            newRay = Ray(newRay.Origin, newRay.Direction * CONFIG.RaycastDistance)
         end
 
         cache = {workspace:FindPartOnRayWithIgnoreList(newRay, targetFilter)}

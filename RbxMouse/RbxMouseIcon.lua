@@ -4,23 +4,16 @@ local methods = {} do
     local Mouse = game:GetService("Players").LocalPlayer:GetMouse()
 
     local currentMouseIcon = Mouse.Icon
-    local hideConnection, hideCallback do
-        hideCallback = function()
-            UserInputService.MouseIconEnabled = false
-        end
-    end
 
     methods.Hide = function()
-        if hideConnection then return end
-        hideConnection = RenderStepped:Connect(hideCallback)
+		UserInputService.MouseIconEnabled = false
     end
 
     methods.Show = function()
-        if not hideConnection then return end
-        hideConnection:Disconnect()
+		UserInputService.MouseIconEnabled = true
     end
 
-    methods.Set = function()
+    methods.Set = function(id)
         local assetId =
             (typeof(id) == "number" and "rbxassetid://" ..id) or
             (typeof(id) == "string" and id) or

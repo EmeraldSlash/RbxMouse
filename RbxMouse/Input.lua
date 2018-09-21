@@ -2,17 +2,21 @@ local CONFIG = require(script.Parent:WaitForChild("Configuration"))
 local UIT_TOUCH = Enum.UserInputType.Touch
 local UIT_BUTTON1 = Enum.UserInputType.MouseButton1
 
+local UserInputService = game:GetService("UserInputService")
+local RenderStepped = game:GetService("RunService").RenderStepped
+
 local boundActions = {}
 local boundBinaryActions = {}
 local boundChangeActions = {}
+local boundFrames = {}
 
-local connectionBegin, connectionEnd, connectionChanged
-local callbackBegan, callbackEnded, callbackChanged do
+local connectionBegin, connectionEnd, connectionChanged, connectionFrame
+local callbackBegan, callbackEnded, callbackChanged, callbackFrame do
     callbackBegan = function(inputObject)
         local input = inputObject.UserInputType
         if (CONFIG.DetectTouchAsButton1 and input == UIT_TOUCH) then
-            inputValue = UIT_BUTTON1
-        then
+            input = UIT_BUTTON1
+        end
 
         local inputCallbacks = boundActions[input]
         if inputCallbacks then
@@ -23,8 +27,8 @@ local callbackBegan, callbackEnded, callbackChanged do
 
         local inputBinaryCallbacks = boundBinaryActions[input]
         if inputBinaryCallbacks then
-            for index = 1, #inputCallbacks do
-                inputCallbacks[index](true)
+            for index = 1, #inputBinaryCallbacks do
+                inputBinaryCallbacks[index](true)
             end
         end
     end
@@ -33,19 +37,19 @@ local callbackBegan, callbackEnded, callbackChanged do
         local input = inputObject.UserInputType
         if (CONFIG.DetectTouchAsButton1 and input == UIT_TOUCH) then
             input = UIT_BUTTON1
-        then
+        end
 
         local inputBinaryCallbacks = boundBinaryActions[input]
         if inputBinaryCallbacks then
-            for index = 1, #inputCallbacks do
-                inputCallbacks[index](false)
+            for index = 1, #inputBinaryCallbacks do
+                inputBinaryCallbacks[index](false)
             end
         end
     end
 
     callbackChanged = function(inputObject)
         local input = inputObject.UserInputType
-        local inputCallbacks = boundChangedActions[input]
+        local inputCallbacks = boundChangeActions[input]
 
         if inputCallbacks then
             for index = 1, #inputCallbacks do
@@ -53,11 +57,15 @@ local callbackBegan, callbackEnded, callbackChanged do
             end
         end
     end
+
+	callbackFrame = function()
+		for index = 1, #boundFrames do
+			boundFrames[index](UserInputService)
+		end
+	end
 end
 
 local Input = {} do
-    local UserInputService = game:GetService("")
-
     Input.bindAction = function(action, callback)
         if not boundActions[action] then boundActions[action] = {} end
         table.insert(boundActions[action], callback)
@@ -73,16 +81,22 @@ local Input = {} do
         table.insert(boundChangeActions[action], callback)
     end
 
+	Input.bindToFrame = function(callback)
+		table.insert(boundFrames, callback)
+	end
+
     Input.disable = function()
         connectionBegan:Disconnect()
         connectionEnded:Disconnect()
         connectionChanged:Disconnect()
+		connectionFrame:Disconnect()
     end
 
     Input.enable = function()
         connectionBegan = UserInputService.InputBegan:Connect(callbackBegan)
         connectionEnded = UserInputService.InputEnded:Connect(callbackEnded)
         connectionChanged = UserInputService.InputChanged:Connect(callbackChanged)
+		connectionFrame = RenderStepped:Connect(callbackFrame)
     end
 
     Input.enable()

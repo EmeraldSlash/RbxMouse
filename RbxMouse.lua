@@ -9,7 +9,7 @@ local Input = require(script:WaitForChild("Input"))
 
 local children = {} do
     children.Button = require(script:WaitForChild("RbxMouseButton"))
-    Children.Icon = require(script:WaitForChild("RbxMouseIcon"))
+    children.Icon = require(script:WaitForChild("RbxMouseIcon"))
 
     if CONFIG.TargetEnabled then
         children.TargetFilter = require(script:WaitForChild("RbxTargetFilter"))
@@ -22,46 +22,44 @@ local properties = {} do
     properties.Position = Vector2.new()
     properties.CFrame = CFrame.new()
 
-    Input.bindActionChange(UIT_MOUSE_MOVEMENT, function(inputObject)
-        properties.Position = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
-        MouseRay.new(properties.Position, children.TargetFilter:Get())
-        properties.CFrame = MouseRay.getCFrame()
-    end)
+	if not CONFIG.ConstantlyUpdatingProperties then
+	    Input.bindActionChange(UIT_MOUSE_MOVEMENT, function(inputObject)
+	        properties.Position = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+	        MouseRay.new(properties.Position, children.TargetFilter:Get())
+	        properties.CFrame = MouseRay.getCFrame()
+	    end)
+	else
+		Input.bindToFrame(function(UserInputService)
+			local mousePosition = UserInputService:GetMouseLocation()
+			properties.Position = mousePosition
+	        MouseRay.new(mousePosition, children.TargetFilter:Get())
+	        properties.CFrame = MouseRay.getCFrame()
+		end)
+	end
 
     if CONFIG.TargetEnabled then
         properties.Target = nil
-        Input.bindAction(UIT_MOUSE_MOVEMENT, function()
-            properties.Target = MouseRay.getTarget()
-        end)
+		local updateTarget = function()
+	    	properties.Target = MouseRay.getTarget()
+	    end
+
+		if not CONFIG.ConstantlyUpdatingProperties then
+	        Input.bindActionChange(UIT_MOUSE_MOVEMENT, updateTarget)
+		else
+			Input.bindToFrame(updateTarget)
+		end
     end
 end
 
 local signals = {} do
-    local Signal = require(script:WaitForChild("Signal"))
+    signals.Move = Instance.new("BindableEvent")
 
-    signals.Move = Signal.new()
-    Input.bindAction(UIT_MOUSE_MOVEMENT, function()
+    Input.bindActionChange(UIT_MOUSE_MOVEMENT, function()
         signals.Move:Fire(properties.Position)
     end)
 end
 
 local methods = {} do
-
-    methods.Hide = function(self)
-        MouseIcon.hide()
-    end
-    methods.Show = function(self)
-        MouseIcon.show()
-    end
-
-    methods.SetIcon = function(self, id)
-        MouseIcon.set(id)
-    end
-
-    methods.GetIcon = function(self, id)
-        z
-    end
-
     methods.Enable = function(self)
         Input.enable()
     end
@@ -85,10 +83,11 @@ local RbxMouse = {} do
         if method then return method end
     end
 
-    setmetatable(Mouse, {
+    setmetatable(RbxMouse, {
         __index = function(self, index)
             local member = getMember(self, index)
             if member then return member end
+			if CONFIG.TargetEnabled and index == "Target" then return nil end
 
             error(tostring(index).. " is not a valid member of RbxMouse")
         end,
