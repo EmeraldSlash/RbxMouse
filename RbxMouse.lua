@@ -1,3 +1,8 @@
+-- A custom mouse object that uses up-to-date APIs
+-- Can be loaded using the Rostrap library manager
+-- @author EmeraldSlash
+-- @repository https://github.com/EmeraldSlash/RbxMouse
+
 if not game:GetService("RunService"):IsClient() then
     error("RbxMouse can only run on the client")
 end
