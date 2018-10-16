@@ -27,6 +27,8 @@ Mouse.Move:Connect(function(newPosition)
 end
 ```
 
+Hopefully this is useful to you in some way :)
+
 # API Reference
 ## RbxMouse
 This module returns a `RbxMouse` object which can be used similar to the official `Mouse` object.
