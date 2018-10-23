@@ -37,8 +37,8 @@ local properties = {} do
 		Input.bindToFrame(function(UserInputService)
 			local mousePosition = UserInputService:GetMouseLocation()
 			properties.Position = mousePosition
-	        MouseRay.new(mousePosition, children.TargetFilter:Get())
-	        properties.CFrame = MouseRay.getCFrame()
+			MouseRay.new(mousePosition, children.TargetFilter:Get())
+	       	properties.CFrame = MouseRay.getCFrame()
 		end)
 	end
 
@@ -49,7 +49,7 @@ local properties = {} do
 	    end
 
 		if not CONFIG.ConstantlyUpdatingProperties then
-	        Input.bindActionChange(UIT_MOUSE_MOVEMENT, updateTarget)
+			Input.bindActionChange(UIT_MOUSE_MOVEMENT, updateTarget)
 		else
 			Input.bindToFrame(updateTarget)
 		end
@@ -90,11 +90,11 @@ local RbxMouse = {} do
 
     setmetatable(RbxMouse, {
         __index = function(self, index)
-            local member = getMember(self, index)
-            if member then return member end
-			if CONFIG.TargetEnabled and index == "Target" then return nil end
-
-            error(tostring(index).. " is not a valid member of RbxMouse")
+		local member = getMember(self, index)
+        	if member then return member end
+		if CONFIG.TargetEnabled and index == "Target" then return nil end
+				
+		error(tostring(index).. " is not a valid member of RbxMouse")
         end,
         __newindex = function() end
     })
