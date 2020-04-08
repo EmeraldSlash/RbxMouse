@@ -73,8 +73,7 @@ local methods = {} do
 	end
 end
 
-local RbxMouse = {} do
-	local getMember = function(self, index)
+local getMember = function(self, index)
 	local child = children[index]
 	if child then return child end
 
@@ -88,7 +87,7 @@ local RbxMouse = {} do
 	if method then return method end
 end
 
-setmetatable(RbxMouse, {
+return setmetatable({}, {
 	__index = function(self, index)
 		local member = getMember(self, index)
 		if member then return member end
@@ -98,5 +97,3 @@ setmetatable(RbxMouse, {
         __newindex = function() end
     })
 end
-
-return RbxMouse
