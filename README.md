@@ -1,3 +1,7 @@
+# Note!
+Version 3.0 is coming soon. It will be more practical and will also have extended functionality.
+The below documentation is different from the current source code on GitHub (although it is still relevant for the released version 2.0).
+
 # RbxMouse v2.0
 A clean mouse object using up-to-date input APIs. Only works on the client, and there should only be one instance of this object running at one point in time.
 
