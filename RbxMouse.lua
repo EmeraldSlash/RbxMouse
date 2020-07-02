@@ -11,46 +11,44 @@
 		Properties:
 			Vector2 Position
 				"The 2D position of the mouse on the screen."
-			CFrame CFrame
-				"The CFrame of the mouse in the world, with the look vector being the hit normal."
+			Vector2 InsetPosition
+				"Same as above but it accounts for the GUI inset."
 			Ray Ray
 				"Unit ray going from Camera in the direction of the mouse. Essentially ScreenPointToRay."
-			?BasePart Target
-				"The part in the world that the mouse is currently over."
-			Material TargetMaterial
-				"The material of the part or terrain that the mouse is currently over."
-			?Table RaycastFilterList
-				"The list of objects to filter with the Raycastmethod (ignore list, whitelist, custom)."
+			<RaycastResult,table> Target
+				"The container for the target Instance, Position, Normal and Material."
+			bool MapTouchToMouse
+				"If set to true, touch input will fire the Button1* and Move signals."
+			float MaxClickTime
+				"Button*Clicked signals will not fire if the buttons were held down for
+				 longer than this number of seconds."
+			bool IgnoreButtonInputWhenGameProcessed
+				"If set to true, Button* signals will not fire if gameProcessedEvent is true."
+			bool IgnoreMotionInputWhenGameProcessed
+				"If set to true, Move and Wheel* signals will not fire if gameProcessedEvent is true."
+			bool DoesRayUseInset
+				"If set to true, UpdateRay will use RbxMouse.InsetPosition and will account for this when creating the ray."
+			bool DoesRayUpdateWithTarget
+				"If set to true, UpdateRay will be called every time UpdateTarget is called."
+			RaycastParams RaycastParams
+				"The RaycastParams (FilterType, FilterList, IgnoreWater) to be passed to the raycast method."
 			float RaycastDistance
 				"The maximum distance a mouse hit can be from the camera."
 			RbxMouse.RAYCAST_* RaycastMethod
 				"The method to use when finding the mouse hit data (part, position, normal, material)
 				 in the world.
-				 RAYCAST_BASIC: FindPartOnRay
-				 RAYCAST_IGNORELIST: FindPartOnRayWithIgnoreList
-				 RAYCAST_WHITELIST: FindPartOnRayWithWhiteList
-				 RAYCAST_FILTER_TRANSPARENT: Ignores transparent parts.
-				 RAYCAST_FILTER_COLLIDABLE: Ignores parts with CanCollide set to false.
+				 RAYCAST_BASIC: Workspace:Raycast() with RaycastParams
+				 RAYCAST_FILTER_TRANSPARENT: Same as RAYCAST_BASIC but it ignores transparent parts.
+				 RAYCAST_FILTER_COLLIDABLE: Same as RAYCAST_BASIC but it ignores parts with CanCollide set to false.
 				 RAYCAST_FILTER_TRANSPARENT_COLLIDABLE: Combines both of the above.
-				 RAYCAST_CUSTOM: Uses a custom function to find the hit data."
-			function CustomRaycastFunction ( Vector3 origin, Vector3 direction, ?Table filterList, ... )
-				"The function to use to find the mouse hit data.
-				 It should return a tuple in the form:
-				 ( ?BasePart hitPart, ?Vector3 hitPosition, ?hitNormal, ?hitMaterial )"
-			float MaxClickTime
-				"Button*Clicked signals will not fire if the buttons were held down for
-				 longer than this number of seconds."
-			bool MapTouchToMouse
-				"If set to true, touch input will fire the Button1* and Move signals."
-			IgnoreButtonInputWhenGameProcessed
-				"If set to true, Button* signals will not fire if gameProcessedEvent is true."
-			IgnoreMotionInputWhenGameProcessed
-				"If set to true, Move and Wheel* signals will not fire if gameProcessedEvent is true."
-		
+				 RAYCAST_CUSTOM: Uses a custom provided function or RbxMouse.CustomRaycastFunction to find the mouse target."
+			function <RaycastResult,table> CustomRaycastFunction ( Vector3 origin, Vector3 direction, RaycastParams raycastParams, ... )
+				"The function to use to find the mouse target.
+				 It should return RaycastParams or a table with the same members as RaycastParams."
+			
 		Signals:
 			"Can be fired manually with RbxMouse:Fire<EventName>(), you can give any arguments.
 			 Example: RbxMouse:FireButton1Click(0.5, true, workspace.Baseplate.Color)"
-			
 			Button1Down ( bool gameProcessed, bool wasTouch )
 			Button1Up ( bool gameProcessed, bool wasTouch )
 			Button1Click ( float timeSpentDown, bool gameProcessed, bool wasTouch )
@@ -66,61 +64,78 @@
 			WheelScroll ( int direction, bool gameProcessed )
 		
 		Methods
-			?Ray UpdateRay ()
-				"Updates and returns the Ray property with the latest data."
-			(?BasePart, ?CFrame, ?Material) UpdateTarget ( ?float raycastDistanceOverride, ?float filterListOverride, ?<RbxMouse.RAYCAST_*,function> raycastMethodOverride )
-				"Updates and returns the Target, CFrame and Material properties with the latest data."
+			Ray UpdateRay ( ?Vector2 customPosition, ?bool customWithInset )
+				"Creates, updates and returns a new unit ray from the camera in the direction of the mouse.
+				 Can take a custom mouse position and whether position has GUI inset already applied to it or not
+				 (if true, will use ScreenPointToRay instead of ViewportPointToRay)."
+			
+			<RaycastResult,table> UpdateTarget ( ?RaycastParams customRaycastParams, ?float customRaycastDistance, ?<RbxMouse.RAYCAST_*,function> customRaycastMethod, ?bool AlsoUpdateRay, ... )
+				"Performs a raycast using the default or given raycast method and updates and returns the mouse Target property.
+				 If customRaycastMethod is a function it will perform the raycast using the function instead of using one of the enum methods,
+				 and has the same signature as RbxMouse.CustomRaycastFunction."
 		
-TODO			string GetIcon ()
-TODO			void SetIcon ( string assetUrl )
-				"Sets the current mouse icon to an image with this asset URL. Equivalent to Mouse.Icon."
+			RbxMouse.UPDATE_* GetUpdateMode()
+			void SetUpdateMode ( RbxMouse.UPDATE_* updateMode )
+				"Sets the current property update mode. This controls whether things like MouseBehavior
+				 will override the UserInputService property every frame by RbxMouse (by calling UpdateBehavior) or
+				 whether that has to be manually done by the user."
+				 UPDATE_MANUAL: Has to be manually updated using the RbxMouse:Set*() methods
+				 UPDATE_RENDER: Updates every frame using RunService.RenderStepped."
 		
-TODO			bool GetVisible ()
-TODO			void SetVisible ( bool visible )
+			RbxMouse.TARGET_* GetTargetMode ()
+			void SetTargetMode ( RbxMouse.TARGET_* TargetMode )
+				"Sets the current target update mode. This controls where and how the mouse Target and Ray will be updated.
+				 TARGET_MANUAL: Has to be manually updated using the RbxMouse:Update*() methods.
+			 	 TARGET_MOVEMENT: Only updates when the mouse moves.
+			 	 TARGET_RENDER: Updates every frame using RunService.RenderStepped."
+
+			bool GetBehavior ( bool getRawUserInputValue )
+				"Does not get raw value by default as it may give an inaccurate value if update mode is
+				 set to UPDATE_RENDER and this gets called before RbxMouse is able undo the UIS reset every frame."
+			void SetBehavior ( MouseBehavior behaviour )
+				"Sets the current mouse behavior. If update mode is UPDATE_RENDER, this value will persist and will not
+				 get reset like it does when using UIS."
+
+			bool GetVisible ()
+			void SetVisible ( bool visible )
 				"Sets whether mouse icon is currently visible. Equivalent to UIS.MouseIconEnabled."
-		
-TODO			bool GetEnabled ()
-TODO			void SetEnabled ( bool enabled )
-				"Sets whether mouse signals will be fired and updates will occur
-				 (if update mode is not UPDATE_MANUAL). Useful if you want to temporarily
-				 disable the mouse without breaking connections."
-		
-TODO			bool GetBehavior ()
-TODO			void SetBehavior ( MouseBehavior behaviour )
-				"Sets the current mouse behavior. Equivalent to UIS.MouseBehavior.
-		
-TODO			bool SetSensitivity ()
-TODO			void SetSensitivity ( float sensitivity )
+
+			bool GetSensitivity ()
+			void SetSensitivity ( float sensitivity )
 				"Sets the mouse sensitivity. Equivalent to UIS.MouseDeltaSensitivity."
-		
-TODO			RbxMouse.UPDATE_* GetUpdateMode ()
-TODO			void SetUpdateMode ( RbxMouse.UPDATE_* )
-				"Sets the current update mode. This controls where and how the mouse hit data
-			 and Ray will be updated.
-			 UPDATE_MANUAL: Has to be manually updated using the RbxMouse:Update*() methods.
-			 UPDATE_MOVEMENT: Only updates when the mouse moves.
-			 UPDATE_RENDER: Updates every frame using RunService.RenderStepped."
-		
-TODO			variant Get<PropertyName> ()
-TODO			void Set<PropertyName> ( variant value )
-				"Allows you to use getter and setter functions on the other properties
-				 of RbxMouse. These are not required and will have a minor negative impact
-				 on performance. This is here to provide consistency in the API, if that
-				 is what you care about."
+
+			string GetIcon ()
+			void SetIcon ( string assetUrl )
+				"Sets the current mouse icon to an image with this asset URL. Equivalent to Mouse.Icon."
+
+			bool GetEnabled ()
+			void SetEnabled ( bool enabled )
+				"Sets whether mouse signals will be fired and render updates will occur.
+				 Useful if you want to temporarily disable the whole mouse without breaking your connections."
 		
 			Vector2 GetDelta ()
 				"Retrives the mouse delta since the last frame but only if mouse is locked.
 				 Equivalent to UIS:GetMouseDelta()."
+				
 			array[3](InputObject) GetButtonsPressed ()
 				"Returns an array of InputObjects corresponding with the mouse buttons
 				 currently being held down. Equivalent to UIS:GetMouseButtonsPressed().
+				
 			bool IsButtonPressed ( UserInputType mouseButton )
 				"Returns whether the given mouse button is currently being held down.
 				 Equivalent to UIS:IsMouseButtonPressed()."
+			
+			variant Get<PropertyName> ()
+			void Set<PropertyName> ( variant value )
+				"Allows you to use getter and setter functions on the other properties
+				 of RbxMouse. These are not required and will have a minor negative impact
+				 on performance. This is here to provide consistency in the API, if that
+				 is what you care about."
 
 --]]
 
 local RbxMouse = {
+	
 	RAYCAST_BASIC = "Basic";
 	RAYCAST_IGNORELIST = "IgnoreList";
 	RAYCAST_WHITELIST = "Whitelist";
@@ -130,43 +145,29 @@ local RbxMouse = {
 	RAYCAST_CUSTOM = "Custom";
 
 	UPDATE_MANUAL = "Manual";
-	UPDATE_MOVEMENT = "Movement";
 	UPDATE_RENDER = "Render";
 
+	TARGET_MANUAL = "Manual";
+	TARGET_MOVEMENT = "Movement";
+	TARGET_RENDER = "Render";
+
 	Position = Vector2.new();
-	
+	InsetPosition = Vector2.new();
 	Ray = Ray.new(Vector3.new(), Vector3.new());
-	CFrame = CFrame.new();
 	Target = nil;
-	TargetMaterial = nil;
-	RaycastFilterList = nil;
+	
+	MapTouchToMouse = true;
+	MaxClickTime = math.huge;
+	IgnoreButtonInputWhenGameProcessed = false;
+	IgnoreMotionInputWhenGameProcessed = false;
+	DoesRayUseInset = false;
+	DoesRayUpdateWithTarget = true;
+	RaycastParams = RaycastParams.new();
 	RaycastDistance = 1024;
 	RaycastMethod = "Basic";
 	CustomRaycastFunction = nil;
 	
-	MaxClickTime = math.huge;
-	MapTouchToMouse = true;
-	IgnoreButtonInputWhenGameProcessed = false;
-	IgnoreMotionInputWhenGameProcessed = false;
 }
-
-local propertySetterCache = {}
-local thingsThatCanBeNil = {Target = true, TargetMaterial = true, RaycastFilterList = true, CustomRaycastFunction = true}
-setmetatable(RbxMouse, {
-	__index = function(self, index)
-		local property = string.match(index, "Set(%w+)")
-		if property and RbxMouse[property] then
-			if not propertySetterCache[property] then
-				propertySetterCache[property] = function(self, value)
-					RbxMouse[property] = value
-				end
-			end
-			return propertySetterCache[property]
-		elseif not thingsThatCanBeNil[index] then
-			error(tostring(index).." is not a valid member of RbxMouse.")
-		end
-	end
-})
 
 do
 	local createSignal = function(name)
@@ -178,6 +179,7 @@ do
 			new:Fire(...)
 		end
 	end
+	
 	createSignal("Button1Down")
 	createSignal("Button1Up")
 	createSignal("Button1Click")
@@ -195,27 +197,77 @@ do
 	createSignal("TargetUpdate")
 end
 
-local updateMode = RbxMouse.UPDATE_MANUAL do
-	local updateConnection
+local updateMode = RbxMouse.UPDATE_MANUAL
+local targetMode = RbxMouse.TARGET_MANUAL
+local mouseBehavior = Enum.MouseBehavior.Default
+local enabled = false
+
+local updateRenderConnection do
+	local renderConnection
+	
+	local renderFunction = function()
+		if updateMode == RbxMouse.UPDATE_RENDER then
+			RbxMouse:SetBehavior(mouseBehavior)
+		end
+		if targetMode == RbxMouse.TARGET_RENDER then
+			RbxMouse:UpdateTarget()
+		end
+	end
+	
+	updateRenderConnection = function()
+		if enabled then
+			if not renderConnection and (updateMode == RbxMouse.UPDATE_RENDER or targetMode == RbxMouse.TARGET_RENDER) then
+				renderConnection = game:GetService("RunService").RenderStepped:Connect(renderFunction)
+			end
+		else
+			if renderConnection then
+				renderConnection:Disconnect()
+				renderConnection = nil
+			end
+		end
+	end
+	
 	RbxMouse.GetUpdateMode = function()
 		return updateMode
 	end
+	
+	RbxMouse.GetTargetMode = function()
+		return targetMode
+	end
+	
 	RbxMouse.SetUpdateMode = function(self, newUpdateMode)
-		if newUpdateMode ~= updateMode and updateConnection then
-			updateConnection:Disconnect()
-			updateConnection = nil	
-		end
 		updateMode = newUpdateMode
-		if updateMode == RbxMouse.UPDATE_RENDER then
-			updateConnection = game:GetService("RunService").RenderStepped:Connect(function()
-				RbxMouse:UpdateTarget()
-			end)
+		if updateMode then
+			if updateMode == RbxMouse.UPDATE_RENDER and not renderConnection and enabled then
+				renderConnection = game:GetService("RunService").RenderStepped:Connect(renderFunction)
+			end
+		else
+			if targetMode ~= RbxMouse.TARGET_RENDER and renderConnection then
+				renderConnection:Disconnect()
+				renderConnection = nil
+			end
 		end
 	end
+	
+	RbxMouse.SetTargetMode = function(self, newTargetMode)
+		targetMode = newTargetMode
+		if targetMode then
+			if targetMode == RbxMouse.TARGET_RENDER and not renderConnection then
+				renderConnection = game:GetService("RunService").RenderStepped:Connect(renderFunction)
+			end
+		else
+			if targetMode ~= RbxMouse.UPDATE_RENDER and renderConnection then
+				renderConnection:Disconnect()
+				renderConnection = nil
+			end
+		end
+	end
+	
 	RbxMouse:SetUpdateMode(updateMode)
+	RbxMouse:SetTargetMode(targetMode)
 end
 
-do
+local updateInputConnections do
 	local UIT = Enum.UserInputType
 	local UIT_MM = UIT.MouseMovement
 	local UIT_M1 = UIT.MouseButton1
@@ -225,6 +277,7 @@ do
 	local UIT_T = UIT.Touch
 	
 	local inputStart = {}
+	
 	local processButtonDown = function(uit, gameProcessed)
 		if not inputStart[uit] then
 			inputStart[uit] = tick()
@@ -237,6 +290,7 @@ do
 			RbxMouse:FireButton3Down(gameProcessed)
 		end
 	end
+	
 	local processButtonUp = function(uit, gameProcessed)
 		local currentInputStart = inputStart[uit]
 		inputStart[uit] = nil
@@ -261,13 +315,17 @@ do
 			end
 		end
 	end
+	
 	local processMovement = function(uit, position, delta, gameProcessed)
-		RbxMouse.Position = Vector2.new(position.X, position.Y)
-		if updateMode == RbxMouse.UPDATE_MOVEMENT then
+		local topLeftInset = game:GetService('GuiService'):GetGuiInset()
+		RbxMouse.InsetPosition = Vector2.new(position.X, position.Y)
+		RbxMouse.Position = RbxMouse.InsetPosition + topLeftInset
+		if targetMode == RbxMouse.TARGET_MOVEMENT then
 			RbxMouse:UpdateTarget()
 		end
 		RbxMouse:FireMove(delta, gameProcessed, uit == UIT_T)
 	end
+	
 	local processScroll = function(scroll, gameProcessed)
 		if scroll > 0 then
 			RbxMouse:FireWheelUp(gameProcessed)
@@ -277,24 +335,25 @@ do
 		RbxMouse:FireWheelScroll(scroll, gameProcessed)
 	end
 	
-	local UserInputService = game:GetService("UserInputService")
-	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	local inputBegan = function(input, gameProcessed)
 		local uit = input.UserInputType
 		if uit == UIT_M1 or uit == UIT_M2 or (RbxMouse.MapTouchToMouse and uit == UIT_T) then
 			if not gameProcessed or not RbxMouse.IgnoreButtonInputWhenGameProcessed then
 				processButtonDown(uit, gameProcessed)
 			end
 		end
-	end)
-	UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	end
+	
+	local inputEnded = function(input, gameProcessed)
 		local uit = input.UserInputType
 		if uit == UIT_M1 or uit == UIT_M2 or (RbxMouse.MapTouchToMouse and uit == UIT_T) then
 			if not gameProcessed or not RbxMouse.IgnoreButtonInputWhenGameProcessed then
 				processButtonUp(uit, gameProcessed)
 			end
 		end
-	end)
-	UserInputService.InputChanged:Connect(function(input, gameProcessed)
+	end
+	
+	local inputChanged = function(input, gameProcessed)
 		local uit = input.UserInputType
 		if uit == UIT_MM or (RbxMouse.MapTouchToMouse and uit == UIT_T) then
 			if not gameProcessed or not RbxMouse.IgnoreMotionInputWhenGameProcessed then
@@ -305,14 +364,54 @@ do
 				processScroll(input.Position.Z, gameProcessed)
 			end
 		end
-	end)
+	end
+	
+	local UserInputService = game:GetService("UserInputService")
+	local inputConnections = {}
+	
+	updateInputConnections = function()
+		for i = 1, #inputConnections do
+			inputConnections[i]:Disconnect()
+		end
+		inputConnections = {}
+		
+		if enabled then
+			table.insert(inputConnections, UserInputService.InputBegan:Connect(inputBegan))
+			table.insert(inputConnections, UserInputService.InputEnded:Connect(inputEnded))
+			table.insert(inputConnections, UserInputService.InputChanged:Connect(inputChanged))
+		end
+	end
+	
+	RbxMouse.GetBehavior = function(self, raw)
+		return (raw and UserInputService.MouseBehavior) or mouseBehavior
+	end
+	RbxMouse.SetBehavior = function(self, newMouseBehavior)
+		mouseBehavior = newMouseBehavior
+		UserInputService.MouseBehavior = mouseBehavior
+	end
+	
+	RbxMouse.GetVisible = function()
+		return UserInputService.MouseIconEnabled
+	end
+	RbxMouse.SetVisible = function(self, newVisible)
+		UserInputService.MouseIconEnabled = newVisible
+	end
+	
+	RbxMouse.GetSensitivity = function()
+		return UserInputService.MouseDeltaSensitivity
+	end
+	RbxMouse.SetSensitivity = function(sensitivity)
+		UserInputService.MouseDeltaSensitivity = sensitivity
+	end
 	
 	RbxMouse.GetDelta = function(self)
 		return UserInputService:GetMouseDelta()
 	end
+	
 	RbxMouse.GetButtonsPressed = function(self)
 		return UserInputService:GetMouseButtonsPressed()
 	end
+	
 	RbxMouse.IsMouseButtonPressed = function(self, mouseButton)
 		return UserInputService:IsMouseButtonPressed(mouseButton)
 	end
@@ -321,60 +420,94 @@ end
 do
 	local Camera = workspace.CurrentCamera
 	
-	local deepCast = function(origin, direction, ignoreList, transparency, canCollide)
-		-- TODO port RecursiveRaycast to this
-		return workspace:FindPartOnRayWithIgnoreList(Ray.new(origin, direction))
+	local deepCast = function(origin, direction, raycastParams, filterTransparency, filterCollide, singleUse)		
+		--  NOTE: Copy the RaycastParams so that caller's filter list will not be mutated
+		--        (useful if the raycast is meant to be called multiple times)
+		if not singleUse then
+			local newParams = RaycastParams.new()
+			newParams.FilterType = raycastParams.FilterType
+			newParams.IgnoreWater = raycastParams.IgnoreWater
+			local newFilterList = {}
+			for i = 1, #raycastParams.FilterDescendantsInstances do
+				newFilterList[i] = raycastParams.FilterDescendantsInstances[i]
+			end
+			newParams.FilterDescendantsInstances = newFilterList
+			raycastParams = newParams
+		end
+		
+		local isBlacklist = raycastParams.FilterType == Enum.RaycastFilterType.Blacklist
+		local lastOrigin
+		local result
+		repeat
+			if result.Instance then
+				if isBlacklist then
+					table.insert(raycastParams.FilterDescendantsInstances, result.Instance)
+				else
+					local instanceIndex = table.find(raycastParams.FilterDescendantsInstances, result.Instance)
+					if instanceIndex then
+						table.remove(raycastParams.FilterDescendantsInstances, instanceIndex)
+					end
+				end
+			end
+			if lastOrigin then
+				direction = direction * ((origin - lastOrigin).Magnitude / direction.Magnitude)
+			end
+			lastOrigin = origin
+			result = workspace:Raycast(origin, direction, raycastParams)
+			origin = result.Position
+		until
+			(not result.Instance) or (not result.Instance:IsA("BasePart")) or
+			((not filterTransparency or result.Transparency < 1) and (not filterCollide or result.CanCollide))
+		return result
 	end
 	
-	RbxMouse.RayUpdate = function(self)
-		local screenRay = Camera:ScreenPointToRay(RbxMouse.Position.X, RbxMouse.Position.Y)
-		RbxMouse.Ray = screenRay.Unit
+	RbxMouse.UpdateRay = function(self, customPosition, customWithInset)
+		local useInset = customWithInset or (RbxMouse.DoesRayUseInset and customWithInset ~= false)
+		local position = customPosition or (useInset and RbxMouse.InsetPosition) or RbxMouse.Position
+		local method = (useInset and Camera.ScreenPointToRay) or Camera.ViewportPointToRay
+		RbxMouse.Ray = method(Camera, position.X, position.Y).Unit
 		RbxMouse:FireRayUpdate(RbxMouse.Ray)
 		return RbxMouse.Ray
 	end
 	
-	RbxMouse.UpdateTarget = function(self, customList, customMethod, customDistance, ...)
-		local ray = RbxMouse:RayUpdate()
-		local raycastList = customList or RbxMouse.RaycastFilterList or {}
+	RbxMouse.UpdateTarget = function(self, customParams, customMethod, customDistance, customUpdateRay, ...)
+		local raycastParams = customParams or RbxMouse.RaycastParams
 		local raycastMethod = customMethod or RbxMouse.RaycastMethod
 		local raycastDistance = customDistance or RbxMouse.RaycastDistance
-		
-		local part, position, normal, material
-		
+		local ray =
+			(customUpdateRay ~= nil and ((customUpdateRay and RbxMouse:UpdateRay()) or RbxMouse.Ray)) or
+			(RbxMouse.DoesRayUpdateWithTarget and RbxMouse:UpdateRay()) or
+			RbxMouse.Ray
+		local raycastResult
 		if raycastMethod == RbxMouse.RAYCAST_BASIC then
-			part, position, normal, material = workspace:FindPartOnRay(
-				Ray.new(ray.Origin, ray.Direction * raycastDistance),
-				...
-			)
-		elseif raycastMethod == RbxMouse.RAYCAST_IGNORELIST then
-			part, position, normal, material = workspace:FindPartOnRayWithIgnoreList(
-				Ray.new(ray.Origin, ray.Direction * raycastDistance),
-				raycastList,
-				...
-			)
-		elseif raycastMethod == RbxMouse.RAYCAST_FILTER_TRANSPARENT then
-			part, position, normal, material = deepCast(
+			raycastResult = workspace:Raycast(
 				ray.Origin,
 				ray.Direction * raycastDistance,
-				raycastList,
+				raycastParams
+			)
+		elseif raycastMethod == RbxMouse.RAYCAST_FILTER_TRANSPARENT then
+			raycastResult = deepCast(
+				ray.Origin,
+				ray.Direction * raycastDistance,
+				raycastParams,
 				true,
 				false,
 				...
 			)
 		elseif raycastMethod == RbxMouse.RAYCAST_FILTER_COLLIDABLE then
-			part, position, normal, material = deepCast(
+			raycastResult = deepCast(
 				ray.Origin,
 				ray.Direction * raycastDistance,
-				raycastList,
+				raycastParams,
 				false,
 				true,
 				...
 			)
 		elseif raycastMethod == RbxMouse.RAYCAST_FILTER_TRANSPARENT_COLLIDABLE then
-			part, position, normal, material = deepCast(
+			raycastResult = deepCast(
 				ray.Origin,
 				ray.Direction * raycastDistance,
-				raycastList,
+				raycastParams,
 				true,
 				true,
 				...
@@ -383,27 +516,87 @@ do
 			local raycastFunction =
 				((type(raycastMethod) == "function") and raycastMethod)
 				or RbxMouse.CustomRaycastFunction
-			part, position, normal, material = raycastMethod(
+			raycastResult = raycastMethod(
 				ray.Origin,
 				ray.Direction * raycastDistance,
-				raycastList,
+				raycastParams,
 				...
 			)
 		end
-		
-		RbxMouse.Target = part
-		RbxMouse.TargetMaterial = material
-		
-		local startPosition = position or ray.Origin + (ray.Direction * raycastDistance)
-		local forwardVector = normal or ray.Direction
-		local upVector = Vector3.new(0, 1, 0)
-		local rightVector = forwardVector:Cross(upVector)
-		upVector = rightVector:Cross(forwardVector)
-		RbxMouse.CFrame = CFrame.fromMatrix(startPosition, rightVector, upVector)
-		
-		RbxMouse:FireTargetUpdate(part, RbxMouse.CFrame, material)
-		return part, RbxMouse.CFrame, material
+		RbxMouse.Target = raycastResult
+		RbxMouse:FireTargetUpdate(RbxMouse.Target)
+		return RbxMouse.Target
 	end
 end
+
+do
+	local Mouse = game:GetService("Players").LocalPlayer
+	
+	RbxMouse.SetIcon = function(asset)
+		Mouse.Icon = asset
+	end
+	
+	RbxMouse.GetIcon = function()
+		return Mouse.Icon
+	end
+end
+
+do
+	RbxMouse.GetEnabled = function()
+		return enabled
+	end
+	
+	RbxMouse.SetEnabled = function(newEnabled)
+		if newEnabled ~= enabled then
+			enabled = newEnabled
+			updateInputConnections()
+			updateRenderConnection()
+		end
+	end
+end
+
+local propertySetterCache = {}
+local propertyGetterCache = {}
+local thingsThatCanBeNil = {"Target", "CustomRaycastFunction"}
+setmetatable(RbxMouse, {
+	__index = function(self, index)
+		if type(index) == "string" then
+			local setProperty = string.match(index, "Set(%w+)")
+			if setProperty and RbxMouse[setProperty] then
+				if not propertySetterCache[setProperty] then
+					propertySetterCache[setProperty] = function(self, value)
+						RbxMouse[setProperty] = value
+					end
+				end
+				return propertySetterCache[setProperty]
+			end
+			local getProperty = string.match(index, "Get(%w+)")
+			if getProperty and RbxMouse[getProperty] then
+				if not propertyGetterCache[getProperty] then
+					propertyGetterCache[getProperty] = function(self)
+						return RbxMouse[getProperty]
+					end
+				end
+				return propertyGetterCache[getProperty]
+			end
+			if not table.find(thingsThatCanBeNil, index) then
+				error("'"..tostring(index).."' is not a valid member of RbxMouse.")
+			end
+		elseif not table.find(thingsThatCanBeNil, index) then
+			error(tostring(index).." is not a valid member of RbxMouse.")
+		end
+	end,
+	__newindex = function(self, index)
+		if not table.find(thingsThatCanBeNil, index) then
+			if type(index) == "string" then
+				index = "'"..index.."'"
+			end
+			error("You cannot create new member "..tostring(index).." of RbxMouse.")
+		end
+	end
+})
+
+enabled = false
+RbxMouse:SetEnabled(true)
 
 return RbxMouse
