@@ -1,143 +1,188 @@
-# Note!
-Version 3.0 is coming soon. It will be more practical and will also have extended functionality.
-The below documentation is different from the current source code on GitHub (although it is still relevant for the released version 2.0).
+# RbxMouse v3.0
 
-# RbxMouse v2.0
-A clean mouse object using up-to-date input APIs. Only works on the client, and there should only be one instance of this object running at one point in time.
-
-The mouse object can be configured in the Configuration module. This will allow you to disable things such as the Target property and the RbxTargetFilter object, and change values such as the length of the ray being cast for the CFrame and Target properties.
-
-Example usage:
+A clean mouse library using up-to-date input and raycasting APIs. Only works on the client, and there should only be one instance of this object running at one point in time.
 
 ```lua
-local Mouse = require(script.RbxMouse)
+local RbxMouse = require(script.RbxMouse)
+```
 
-Mouse.TargetFilter:Add(workspace.Part)
-Mouse.Icon:Set(12345678)
+A basic gun system example:
+```lua
+-- If gameProcessedEvent is true, don't fire input events
+RbxMouse.IgnoreButtonInputWhenProcessed = true
+-- Ignore parts with Transparency >= 1 and/or with CanCollide == false
+RbxMouse.RaycastMethod = RbxMouse.RAYCAST_FILTER_TRANSPARENCY_COLLIDE 
 
-local leftMouseButton = Mouse.Button[1]
-leftMouseButton.Down:Connect(function()
-    print("Left mouse button pressed!")
-end
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {game.Players.LocalPlayer.Character}
+raycastParams.FilterType = Enum.FilterType.Blacklist
+RbxMouse.RaycastParams = raycastParams
 
-local rightMouseButton = Mouse.Button.Right
-rightMouseButton.Click:Connect(function(timeSpentDown))
-    print("Right mouse button clicked!")
-end
+RbxMouse.Button1Down:Connect(function()
+    -- Cast a ray and get hit part, position, normal and material
+    local target = RbxMouse:UpdateTarget()
+    local part = target.Instance
+    if part then
+        local player = game.Players:GetPlayerFromCharacter(part.Parent)
+        if player then
+            game.ReplicatedStorage.DamagePlayer:FireServer(player, target.Position)
+        end
+    end
+end)
+```
 
-Mouse.Move:Connect(function(newPosition)
-    print("Left mouse button is down =", leftMouseButton.IsDown)
-    print("Current mouse target is", Mouse.Target)
-end
+A basic first person camera system example:
+```lua
+local angle_x = 0
+local angle_y = 0
+
+RbxMouse:SetUpdateMode(RbxMouse.UPDATE_RENDER)
+-- With mode set to UPDATE_RENDER, there is no need to set this every frame
+RbxMouse:SetMouseBehavior(Enum.MouseBehavior.LockCenter)
+-- Hide mouse icon
+RbxMouse:SetVisible(false)
+
+RbxMouse.Move:Connect(function(delta)
+    -- Use mouse delta to modify camera angle
+    angle_x = angle_x + (delta.X / SENSITIVITY)
+    angle_y = math.clamp(angle_y + (delta.Y / SENSITIVITY), MIN_Y, MAX_Y)
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    local headPosition = game.Players.LocalPlayer.Character.Head.Position
+    Camera.CFrame = CFrame.new(
+        headPosition, 
+        CFrame.new(headPosition) * CFrame.Angles(0, x, 0) * CFrame.Angles(0, y, 0)
+    )
+end)
 ```
 
 # API Reference
-## RbxMouse
-This module returns a `RbxMouse` object which can be used similar to the official `Mouse` object.
+? means a value can be nil or is optional
+	
+## Properties
 
-### Children
-#### *RbxMouseButton* RbxMouse.Button
-Object that holds 3 `RbxMouseButton` objects, one for each of the 3 buttons on a mouse.
-They can be indexed either by their number (1, 2, 3) or their name/position (Left, Right, Middle).
+#### *Vector2* Position
+The 2D position of the mouse on the screen, ignoring GUI inset.
 
-```lua
-Mouse.Button[1]
-Mouse.Button.Left
+#### *Vector2* InsetPosition
+Same as above but it accounts for the GUI inset.
 
-Mouse.Button[2]
-Mouse.Button.Right
+#### *Ray* Ray
+Unit ray going from Camera in the direction of the mouse. Essentially `Camera:ScreenPointToRay`.
 
-Mouse.Button[3]
-Mouse.Button.Middle
-```
+#### *<RaycastResult,table>* Target
+The container for the target Instance, Position, Normal and Material.
 
-#### *RbxMouseIcon* RbxMouse.Icon
-`RbxMouseIcon` object for the mouse.
+#### *bool* MapTouchToMouse
+If set to true, touch input will fire the Button1* and Move signals.
 
-#### *RbxTargetFilter* RbxMouse.TargetFilter
-`RbxTargetFilter` for the mouse. Will throw an exception if target is disabled in configuration.
+#### *float* MaxClickTime
+Button*Clicked signals will not fire if the buttons were held down for longer than this number of seconds.
 
-### Properties
-This `Mouse` object has a lot of similar properties.
+#### *bool* IgnoreButtonInputWhenGameProcessed
+If set to true, Button* signals will not fire if gameProcessedEvent is true.
 
-#### *Vector2* Mouse.Position
-The 2D position of the mouse.
+#### *bool* IgnoreMotionInputWhenGameProcessed
+If set to true, Move and Wheel* signals will not fire if gameProcessedEvent is true.
 
-#### *CFrame* Mouse.CFrame
-The 3D position and direction of the mouse.
+#### *bool* DoesRayUseInset
+If set to true, UpdateRay will use RbxMouse.InsetPosition and will account for this when creating the ray.
 
-#### *BasePart/nil* Mouse.Target
-The BasePart the mouse is hovering over. Will throw an exception if target is disabled in configuration.
+#### *bool* DoesRayUpdateWithTarget
+If set to true, UpdateRay will be called every time UpdateTarget is called.
 
-### Signals
-#### Mouse.Move ( *Vector2* Position )
-Fires every time the mouse is moved. The position of the mouse is passed to the callback function.
+#### *RaycastParams* RaycastParams
+The RaycastParams (FilterType, FilterList, IgnoreWater) to be passed to the raycast method.
 
-### Methods
-#### *void* Mouse:Hide ( )
-Hides the mouse icon. Only needs to be called once.
+#### *float* RaycastDistance
+The maximum distance a mouse hit can be from the camera.
 
-#### *void* Mouse:Show ( )
-Shows the mouse icon. Only needs to be called once.
+#### *RbxMouse.RAYCAST_\** RaycastMethod
+The method to use when finding the mouse hit data (part, position, normal, material) in the world.
 
-#### *void* Mouse:Disable ( )
-Disconnects all input listeners without removing your connections. Useful if you want to put the Mouse's properties into a static state, or if you want to stop listening for Mouse input.
+**RAYCAST_BASIC**: `Workspace:Raycast()` with RaycastParams
+**RAYCAST_FILTER_TRANSPARENT**: Same as RAYCAST_BASIC but it ignores transparent parts.
+**RAYCAST_FILTER_COLLIDABLE**: Same as RAYCAST_BASIC but it ignores parts with CanCollide set to false.
+**RAYCAST_FILTER_TRANSPARENT_COLLIDABLE**: Combines both of the above.
+**RAYCAST_CUSTOM**: Uses a custom provided function or `RbxMouse.CustomRaycastFunction` to find the mouse target.
 
-#### *void* Mouse:Enable ( )
-Reconnects all input listeners.
+#### *function<RaycastResult,table>* CustomRaycastFunction ( *Vector3* origin, *Vector3* direction, *RaycastParams* raycastParams, ... )
+The function to use to find the mouse target. It should return RaycastParams or a table with the same members as RaycastParams. It can also take any number of additional parameters, which may be given when it is called by RbxMouse:UpdateTarget.
+	
+## Signals
+Can be fired manually with RbxMouse:Fire<EventName>(), you can give any arguments.
 
-## RbxMouseButton
-A `RbxMouseButton` objects represents one of the buttons on a mouse.
+Example: `RbxMouse:FireButton1Click(0.5, true, workspace.Baseplate.Color)`
 
-### Properties
-#### *bool* RbxMouseButton.IsDown
-Whether the button is being pressed or not.
+#### Button1Down ( *bool* gameProcessed, *bool* wasTouch )
+#### Button1Up ( *bool* gameProcessed, *bool* wasTouch )
+#### Button1Click ( *float* timeSpentDown, *bool* gameProcessed, *bool* wasTouch )
+#### Button2Down ( *bool* gameProcessed )
+#### Button2Up ( *bool* gameProcessed )
+#### Button2Click ( *float* timeSpentDown, *bool* gameProcessed )
+#### Button3Down ( *bool* gameProcessed )
+#### Button3Up ( *bool* gameProcessed )
+#### Button3Click ( *float* timeSpentDown, *bool* gameProcessed )
+#### Move ( *Vector2* delta, *bool* gameProcessed )
+#### WheelDown (*bool* gameProcessed )
+#### WheelUp ( *bool* gameProcessed )
+#### WheelScroll ( *int* direction, *bool* gameProcessed )
 
-### Signals
-#### RbxMouseButton.Down ( )
-Fired when the button is pressed.
+## Methods
 
-#### RbxMouseButton.Up ( )
-Fired when the button is released.
+#### *Ray* UpdateRay ( *?Vector2* customPosition, *?bool* customWithInset )
+Creates, updates and returns a new unit ray from the camera in the direction of the mouse. Can take a custom mouse position and whether position has GUI inset already applied to it or not (if true, will use `Camera:ScreenPointToRay` instead of `Camera:ViewportPointToRay`).
+		
+#### *<RaycastResult,table>* UpdateTarget ( *?RaycastParams* customRaycastParams, *?float* customRaycastDistance, *?<RbxMouse.RAYCAST_*,function>* customRaycastMethod, *?bool* AlsoUpdateRay, ... )
+Performs a raycast using the default or given raycast method and updates and returns the mouse Target property. If customRaycastMethod is a function it will perform the raycast using the function instead of using one of the enum methods, and has the same signature as RbxMouse.CustomRaycastFunction. Additional parameters will be passed to the raycast method.
+	
+#### *RbxMouse.UPDATE_\** GetUpdateMode()
+#### *void* SetUpdateMode ( *RbxMouse.UPDATE_\** updateMode )
+Sets the current property update mode. This controls whether things like MouseBehavior will override the UserInputService property every frame by RbxMouse (by calling UpdateBehavior) or whether that has to be manually done by the user.
 
-#### RbxMouseButton.Click ( *number* TimeSpentDown )
-Fired when the button is released if the time the button was spent down was smaller than or equal to the click threshold (defaults to 0.5 seconds, can be configured in the configuration module).
+**UPDATE_MANUAL**: Has to be manually updated using the `RbxMouse:Set*()` methods
+**UPDATE_RENDER**: Updates every frame using `RunService.RenderStepped`.
 
-### Methods
-#### *void* RbxMouseButton:ForceDown ( )
-Forces the button to be pressed. The button will still be considered released when the user stops pressing the button.
+#### *RbxMouse.TARGET_\** GetTargetMode ()
+#### *void* SetTargetMode ( *RbxMouse.TARGET_\** targetMode )
+Sets the current target update mode. This controls where and how the mouse Target and Ray will be updated.
 
-#### *void* RbxMouseButton:ForceUp ( )
-Forces the button to be released. The button will still be considered pressed when the user presses the button.
+**TARGET_MANUAL**: Has to be manually updated using the `RbxMouse:Update*()` methods.
+**TARGET_MOVEMENT**: Only updates when the mouse moves.
+**TARGET_RENDER**: Updates every frame using `RunService.RenderStepped.`
 
-## RbxMouseIcon
-A `RbxMouseIcon` object is responsible for the mouse icon.
+#### *bool* GetBehavior ( *bool* getRawUserInputValue )
+Does not get raw value by default as it may give an inaccurate value if update mode is set to UPDATE_RENDER and this gets called before RbxMouse is able undo the UIS reset every frame.
 
-### Methods
-#### *void* RbxMouseIcon:Show ( )
-Shows the mouse icon. Only needs to be called once.
+#### *void* SetBehavior ( *MouseBehavior* behaviour )
+Sets the current mouse behavior. If update mode is UPDATE_RENDER, this value will persist and will not get reset like it does when using UIS.
 
-#### *void* RbxMouseIcon:Hide ( )
-Hides the mouse icon. Only needs to be called once.
+#### *bool* GetVisible ()
+#### *void* SetVisible ( *bool* visible )
+Sets whether mouse icon is currently visible. Equivalent to `UIS.MouseIconEnabled`.
 
-#### *void* RbxMouseIcon:Set ( *int/string* AssetId )
-Sets the mouse icon to an image asset path. If `AssetId` is an int, it will convert it into a valid path before setting it. Call it with nil or an empty string to reset the icon.
+#### *bool* GetSensitivity ()
+#### *void* SetSensitivity ( *float* sensitivity )
+Sets the mouse sensitivity. Equivalent to `UIS.MouseDeltaSensitivity`.
 
-#### *void* RbxMouseIcon:Get ( )
-Returns the current mouse icon asset ID. Returns an empty string if it has not been set.
+#### string GetIcon ()
+#### *void* SetIcon ( *string* assetUrl )
+Sets the current mouse icon to an image with this asset URL. Equivalent to Mouse.Icon.
 
-## RbxTargetFilter
-A `RbxTargetFilter` objects is responsible for managing the objects in the mouse's target filter. A target filter is an array that cannot hold more than one reference to the same `Instance` at the same time.
-
-### Methods
-#### *void* RbxTargetFilter:Set ( *array<Instance>/Instance* Objects )
-Sets the target filter to an array (overwriting the old target filter). If the `Object` argument is an `Instance`, it will create an array and insert the `Instance` into the array. If there are duplicate references, only one will be used.
-
-#### *array<Instance>* RbxTargetFilter:Get ( )
-Returns the array of objects in the target filter.
-
-#### *void* RbxTargetFilter:Add ( *Instance* Object )
-Adds an object into the target filter. If this will cause duplicate references, it will not be added.
-
-#### *void* RbxTargetFilter:Remove ( *Instance* Object )
-Removes an instance from the target filter.
+#### *bool* GetEnabled ()
+#### *void* SetEnabled ( *bool* enabled )
+Sets whether mouse signals will be fired and render updates will occur. Useful if you want to temporarily disable the whole mouse without breaking your connections.
+		
+#### *Vector2* GetDelta ()
+Retrives the mouse delta since the last frame but only if mouse is locked. Equivalent to `UIS:GetMouseDelta()`.
+				
+#### *array(InputObject)* GetButtonsPressed ()
+Returns an array of InputObjects corresponding with the mouse buttons currently being held down. Equivalent to `UIS:GetMouseButtonsPressed()`.
+				
+#### *bool* IsButtonPressed ( *UserInputType* mouseButton )
+Returns whether the given mouse button is currently being held down. Equivalent to `UIS:IsMouseButtonPressed()`.
+			
+#### *variant* Get<PropertyName> ()
+#### *void* Set<PropertyName> ( *variant* value )
+Allows you to use getter and setter functions on the other properties of RbxMouse. Using these methods is not required and are just here for your convenience.
