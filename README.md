@@ -19,15 +19,15 @@ raycastParams.FilterType = Enum.FilterType.Blacklist
 RbxMouse.RaycastParams = raycastParams
 
 RbxMouse.Button1Down:Connect(function()
-    -- Cast a ray and get hit part, position, normal and material
-    local target = RbxMouse:UpdateTarget()
-    local part = target.Instance
-    if part then
-        local player = game.Players:GetPlayerFromCharacter(part.Parent)
-        if player then
-            game.ReplicatedStorage.DamagePlayer:FireServer(player, target.Position)
-        end
-    end
+	-- Cast a ray and get hit part, position, normal and material
+	local target = RbxMouse:UpdateTarget()
+	local part = target.Instance
+	if part then
+		local player = game.Players:GetPlayerFromCharacter(part.Parent)
+		if player then
+			game.ReplicatedStorage.DamagePlayer:FireServer(player, target.Position)
+		end
+	end
 end)
 ```
 
@@ -43,17 +43,17 @@ RbxMouse:SetMouseBehavior(Enum.MouseBehavior.LockCenter)
 RbxMouse:SetVisible(false)
 
 RbxMouse.Move:Connect(function(delta)
-    -- Use mouse delta to modify camera angle
-    angle_x = angle_x + (delta.X / SENSITIVITY)
-    angle_y = math.clamp(angle_y + (delta.Y / SENSITIVITY), MIN_Y, MAX_Y)
+	-- Use mouse delta to modify camera angle
+	angle_x = angle_x + (delta.X / SENSITIVITY)
+	angle_y = math.clamp(angle_y + (delta.Y / SENSITIVITY), MIN_Y, MAX_Y)
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
-    local headPosition = game.Players.LocalPlayer.Character.Head.Position
-    Camera.CFrame = CFrame.new(
-        headPosition, 
-        CFrame.new(headPosition) * CFrame.Angles(0, x, 0) * CFrame.Angles(0, y, 0)
-    )
+	local headPosition = game.Players.LocalPlayer.Character.Head.Position
+	Camera.CFrame = CFrame.new(
+		headPosition, 
+		CFrame.new(headPosition) * CFrame.Angles(0, x, 0) * CFrame.Angles(0, y, 0)
+	)
 end)
 ```
 
