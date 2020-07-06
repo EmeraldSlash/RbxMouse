@@ -210,8 +210,6 @@ Allows you to use getter and setter functions on the other properties of RbxMous
 local RbxMouse = {
 	
 	RAYCAST_BASIC = "Basic";
-	RAYCAST_IGNORELIST = "IgnoreList";
-	RAYCAST_WHITELIST = "Whitelist";
 	RAYCAST_FILTER_TRANSPARENT = "FilterTransparent";
 	RAYCAST_FILTER_COLLIDABLE = "FilterCollidable";
 	RAYCAST_FILTER_TRANSPARENT_COLLIDABLE = "FilterTransparentCollidable";
@@ -276,7 +274,7 @@ local mouseBehavior = Enum.MouseBehavior.Default
 local enabled = false
 
 local updateRenderConnection do
-	local renderConnection
+	local RunService = game:GetService('RunService')
 	
 	local renderFunction = function()
 		if updateMode == RbxMouse.UPDATE_RENDER then
@@ -288,15 +286,10 @@ local updateRenderConnection do
 	end
 	
 	updateRenderConnection = function()
-		if enabled then
-			if not renderConnection and (updateMode == RbxMouse.UPDATE_RENDER or targetMode == RbxMouse.TARGET_RENDER) then
-				renderConnection = game:GetService("RunService").RenderStepped:Connect(renderFunction)
-			end
+		if enabled and (updateMode == RbxMouse.UPDATE_RENDER or targetMode == RbxMouse.TARGET_RENDER) then
+			RunService:BindToRenderStep("RbxMouse", Enum.RenderPriority.Camera + 1, renderFunction)
 		else
-			if renderConnection then
-				renderConnection:Disconnect()
-				renderConnection = nil
-			end
+			RunService:UnbindFromRenderStep("RbxMouse")
 		end
 	end
 	
@@ -310,30 +303,12 @@ local updateRenderConnection do
 	
 	RbxMouse.SetUpdateMode = function(self, newUpdateMode)
 		updateMode = newUpdateMode
-		if updateMode then
-			if updateMode == RbxMouse.UPDATE_RENDER and not renderConnection and enabled then
-				renderConnection = game:GetService("RunService").RenderStepped:Connect(renderFunction)
-			end
-		else
-			if targetMode ~= RbxMouse.TARGET_RENDER and renderConnection then
-				renderConnection:Disconnect()
-				renderConnection = nil
-			end
-		end
+		updateRenderConnection()
 	end
 	
 	RbxMouse.SetTargetMode = function(self, newTargetMode)
 		targetMode = newTargetMode
-		if targetMode then
-			if targetMode == RbxMouse.TARGET_RENDER and not renderConnection then
-				renderConnection = game:GetService("RunService").RenderStepped:Connect(renderFunction)
-			end
-		else
-			if targetMode ~= RbxMouse.UPDATE_RENDER and renderConnection then
-				renderConnection:Disconnect()
-				renderConnection = nil
-			end
-		end
+		updateRenderConnection()
 	end
 	
 	RbxMouse:SetUpdateMode(updateMode)
@@ -659,13 +634,14 @@ setmetatable(RbxMouse, {
 			error(tostring(index).." is not a valid member of RbxMouse.")
 		end
 	end,
-	__newindex = function(self, index)
+	__newindex = function(self, index, value)
 		if not table.find(thingsThatCanBeNil, index) then
 			if type(index) == "string" then
 				index = "'"..index.."'"
 			end
 			error("You cannot create new member "..tostring(index).." of RbxMouse.")
 		end
+		rawset(self, index, value)
 	end
 })
 
