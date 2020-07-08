@@ -1,5 +1,6 @@
 -- A clean mouse library that uses up-to-date APIs
 -- Can be loaded using the Rostrap library manager
+-- @version 3.0
 -- @author EmeraldSlash
 -- @repository https://github.com/EmeraldSlash/RbxMouse
 
