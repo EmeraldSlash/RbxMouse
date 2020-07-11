@@ -288,7 +288,7 @@ local updateRenderConnection do
 	
 	updateRenderConnection = function()
 		if enabled and (updateMode == RbxMouse.UPDATE_RENDER or targetMode == RbxMouse.TARGET_RENDER) then
-			RunService:BindToRenderStep("RbxMouse", Enum.RenderPriority.Camera + 1, renderFunction)
+			RunService:BindToRenderStep("RbxMouse", Enum.RenderPriority.Camera.Value - 1, renderFunction)
 		else
 			RunService:UnbindFromRenderStep("RbxMouse")
 		end
@@ -484,30 +484,38 @@ do
 			raycastParams = newParams
 		end
 		
+		local target = origin + direction
 		local isBlacklist = raycastParams.FilterType == Enum.RaycastFilterType.Blacklist
-		local lastOrigin
-		local result
-		repeat
-			if result.Instance then
-				if isBlacklist then
-					table.insert(raycastParams.FilterDescendantsInstances, result.Instance)
+		local i = 0
+		while true do
+			i+=1
+			local result = workspace:Raycast(origin, target - origin, raycastParams)
+			if result and result.Instance then
+				local part = result.Instance
+				if (not part:IsA("BasePart")) or (
+					(not filterTransparency or part.Transparency < 1) and
+					(not filterCollide or part.CanCollide)
+				) then
+					return part
 				else
-					local instanceIndex = table.find(raycastParams.FilterDescendantsInstances, result.Instance)
-					if instanceIndex then
-						table.remove(raycastParams.FilterDescendantsInstances, instanceIndex)
+					origin = result.Position
+					if isBlacklist then
+						local filterInstances = raycastParams.FilterDescendantsInstances
+						table.insert(filterInstances, part)
+						raycastParams.FilterDescendantsInstances = filterInstances
+					else
+						local filterInstances = raycastParams.FilterDescendantsInstances
+						local partIndex = table.find(filterInstances, part)
+						if partIndex then
+							table.remove(filterInstances, partIndex)
+							raycastParams.FilterDescendantsInstances = filterInstances
+						end
 					end
 				end
+			else
+				return nil
 			end
-			if lastOrigin then
-				direction = direction * ((origin - lastOrigin).Magnitude / direction.Magnitude)
-			end
-			lastOrigin = origin
-			result = workspace:Raycast(origin, direction, raycastParams)
-			origin = result.Position
-		until
-			(not result.Instance) or (not result.Instance:IsA("BasePart")) or
-			((not filterTransparency or result.Transparency < 1) and (not filterCollide or result.CanCollide))
-		return result
+		end
 	end
 	
 	RbxMouse.UpdateRay = function(self, customPosition, customWithInset)
