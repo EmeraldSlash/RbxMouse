@@ -29,8 +29,8 @@ A basic gun system example:
 ```lua
 -- If gameProcessedEvent is true, don't fire input events
 RbxMouse.IgnoreButtonInputWhenProcessed = true
--- Ignore parts with Transparency >= 1 and/or with CanCollide == false
-RbxMouse.RaycastMethod = RbxMouse.RAYCAST_FILTER_TRANSPARENCY_COLLIDE 
+-- Ignore parts with Transparency >= 1 or CanCollide == false
+RbxMouse.RaycastMethod = RbxMouse.RAYCAST_FILTER_TRANSPARENCY_COLLIDABLE
 
 local raycastParams = RaycastParams.new()
 raycastParams.FilterDescendantsInstances = {game.Players.LocalPlayer.Character}
