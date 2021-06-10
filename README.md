@@ -1,4 +1,4 @@
-# RbxMouse v3.0
+# RbxMouse v3.1
 
 A clean mouse library using up-to-date input and raycasting APIs. Only works on the client, and there should only be one instance of this object running at one point in time.
 
@@ -6,54 +6,80 @@ A clean mouse library using up-to-date input and raycasting APIs. Only works on 
 local RbxMouse = require(script.RbxMouse)
 ```
 
-A basic gun system example:
-```lua
--- If gameProcessedEvent is true, don't fire input events
-RbxMouse.IgnoreButtonInputWhenProcessed = true
--- Ignore parts with Transparency >= 1 or CanCollide == false
-RbxMouse.RaycastMethod = RbxMouse.RAYCAST_FILTER_TRANSPARENCY_COLLIDABLE 
-
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = {game.Players.LocalPlayer.Character}
-raycastParams.FilterType = Enum.FilterType.Blacklist
-RbxMouse.RaycastParams = raycastParams
-
-RbxMouse.Button1Down:Connect(function()
-	-- Cast a ray and get hit part, position, normal and material
-	local target = RbxMouse:UpdateTarget()
-	local part = target.Instance
-	if part then
-		local player = game.Players:GetPlayerFromCharacter(part.Parent)
-		if player then
-			game.ReplicatedStorage.DamagePlayer:FireServer(player, target.Position)
-		end
-	end
-end)
-```
-
 A basic first person camera system example:
 ```lua
-local angle_x = 0
-local angle_y = 0
+local SENSITIVITY = 0.001
+local MIN_Y = -math.pi/2.1
+local MAX_Y = math.pi/2.1
+
+local camera = workspace.CurrentCamera
+local angleX = 0
+local angleY = 0
 
 RbxMouse:SetUpdateMode(RbxMouse.UPDATE_RENDER)
 -- With mode set to UPDATE_RENDER, there is no need to set this every frame
-RbxMouse:SetMouseBehavior(Enum.MouseBehavior.LockCenter)
+RbxMouse:SetBehavior(Enum.MouseBehavior.LockCenter)
 -- Hide mouse icon
 RbxMouse:SetVisible(false)
 
 RbxMouse.Move:Connect(function(delta)
-	-- Use mouse delta to modify camera angle
-	angle_x = angle_x + (delta.X / SENSITIVITY)
-	angle_y = math.clamp(angle_y + (delta.Y / SENSITIVITY), MIN_Y, MAX_Y)
+	-- Use mouse delta (which is in pixel units) to modify camera angle
+	angleX = angleX - (delta.X * SENSITIVITY)
+	angleY = math.clamp(angleY - (delta.Y * SENSITIVITY), MIN_Y, MAX_Y)
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
-	local headPosition = game.Players.LocalPlayer.Character.Head.Position
-	Camera.CFrame = CFrame.new(
-		headPosition, 
-		CFrame.new(headPosition) * CFrame.Angles(0, x, 0) * CFrame.Angles(0, y, 0)
-	)
+	local character = game.Players.LocalPlayer.Character
+	if character then
+		local head = character:FindFirstChild("Head")
+		if head then
+			camera.CameraType = Enum.CameraType.Scriptable
+			camera.Focus = CFrame.new(head.Position)
+			local cf = CFrame.fromEulerAnglesXYZ(
+				angleY,
+				angleX,
+				0
+			)
+			camera.CFrame = CFrame.fromMatrix(
+				head.Position, 
+				cf.XVector,
+				cf.YVector,
+				cf.ZVector
+			)
+		else
+			camera.CameraType = Enum.CameraType.Custom
+		end
+	else
+		camera.CameraType = Enum.CameraType.Custom
+	end
+end)
+```
+
+A realllly basic gun system example:
+```lua
+-- If gameProcessedEvent is true, don't fire input events
+RbxMouse.IgnoreButtonInputWhenGameProcessed = true
+-- Ignore parts with Transparency >= 1 or CanCollide == false
+RbxMouse.RaycastMethod = RbxMouse.RAYCAST_FILTER_TRANSPARENT_COLLIDABLE
+
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {game.Players.LocalPlayer.Character}
+raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+RbxMouse.RaycastParams = raycastParams
+
+RbxMouse.Button1Down:Connect(function()
+	-- Cast a ray and get hit part, position, normal and material
+	local targetResult = RbxMouse:UpdateTarget()
+	if targetResult and targetResult.Instance then
+		local targetPlayer = game.Players:GetPlayerFromCharacter(targetResult.Instance.Parent)
+		if targetPlayer then
+			print(("Hit part %s (of player %s)"):format(targetResult.Instance.Name, targetPlayer.Name))
+		-- Then you might call something like:
+		-- game.ReplicatedStorage.HitPlayer:FireServer(targetPlayer, targetResult.Position)
+		else
+			print(("Hit part %s"):format(targetResult.Instance.Name))
+		end
+	end
 end)
 ```
 
@@ -71,8 +97,11 @@ Same as above but it accounts for the GUI inset.
 #### *Ray* Ray
 Unit ray going from Camera in the direction of the mouse. Essentially `Camera:ScreenPointToRay`.
 
-#### *<RaycastResult,table>* Target
-The container for the target Instance, Position, Normal and Material.
+#### *<RaycastResult,table,nil>* Target
+The container for the target Instance, Position, Normal and Material. This will always be a RaycastResult instance, unless nothing was hit or a custom raycast method was used which returned a table instead.
+
+#### *<BasePart,nil>* TargetInstance
+The Target's Instance value, or nil if Target is nil (for quality of life).
 
 #### *bool* MapTouchToMouse
 If set to true, touch input will fire the Button1* and Move signals.
@@ -107,8 +136,8 @@ The method to use when finding the mouse hit data (part, position, normal, mater
 **RAYCAST_FILTER_TRANSPARENT_COLLIDABLE**: Combines both of the above.
 **RAYCAST_CUSTOM**: Uses a custom provided function or `RbxMouse.CustomRaycastFunction` to find the mouse target.
 
-#### *function<RaycastResult,table>* CustomRaycastFunction ( *Vector3* origin, *Vector3* direction, *RaycastParams* raycastParams, ... )
-The function to use to find the mouse target. It should return RaycastParams or a table with the same members as RaycastParams. It can also take any number of additional parameters, which may be given when it is called by RbxMouse:UpdateTarget.
+#### *function<RaycastResult>* CustomRaycastFunction ( *Vector3* origin, *Vector3* direction, *RaycastParams* raycastParams, ... )
+The function to use to find the mouse target. It should return RaycastResult or a table with the same members as RaycastResult. It can also take any number of additional parameters, which may be given when calling RbxMouse:UpdateTarget().
 	
 ## Signals
 Can be fired manually with RbxMouse:Fire<EventName>(), you can give any arguments.
@@ -124,18 +153,20 @@ Example: `RbxMouse:FireButton1Click(0.5, true, workspace.Baseplate.Color)`
 #### Button3Down ( *bool* gameProcessed )
 #### Button3Up ( *bool* gameProcessed )
 #### Button3Click ( *float* timeSpentDown, *bool* gameProcessed )
-#### Move ( *Vector2* delta, *bool* gameProcessed )
 #### WheelDown (*bool* gameProcessed )
 #### WheelUp ( *bool* gameProcessed )
 #### WheelScroll ( *int* direction, *bool* gameProcessed )
+#### Move ( *Vector2* delta, *bool* gameProcessed )
+#### RayUpdate ( *Vector3* ray )
+#### TargetUpdate ( *<RaycastResult,table,nil>* target, *<BasePart,nil>* targetInstance )
 
 ## Methods
 
 #### *Ray* UpdateRay ( *?Vector2* customPosition, *?bool* customWithInset )
 Creates, updates and returns a new unit ray from the camera in the direction of the mouse. Can take a custom mouse position and whether position has GUI inset already applied to it or not (if true, will use `Camera:ScreenPointToRay` instead of `Camera:ViewportPointToRay`).
 		
-#### *<RaycastResult,table>* UpdateTarget ( *?RaycastParams* customRaycastParams, *?float* customRaycastDistance, *?<RbxMouse.RAYCAST_*,function>* customRaycastMethod, *?bool* AlsoUpdateRay, ... )
-Performs a raycast using the default or given raycast method and updates and returns the mouse Target property. If customRaycastMethod is a function it will perform the raycast using the function instead of using one of the enum methods, and has the same signature as RbxMouse.CustomRaycastFunction. Additional parameters will be passed to the raycast method.
+#### *<RaycastResult,table,nil>, <BasePart,nil>* UpdateTarget ( *?RaycastParams* customRaycastParams, *?float* customRaycastDistance, *?<RbxMouse.RAYCAST_*,function>* customRaycastMethod, *?bool* AlsoUpdateRay, <Arguments to raycast method> ... )
+Performs a raycast using the default or given raycast method and updates and returns RbxMouse's Target and TargetInstance properties. If customRaycastMethod is a function it will perform the raycast using the function instead of using one of the enum methods, and has the same signature as RbxMouse.CustomRaycastFunction. Additional parameters will be passed to the raycast method.
 	
 #### *RbxMouse.UPDATE_\** GetUpdateMode()
 #### *void* SetUpdateMode ( *RbxMouse.UPDATE_\** updateMode )
