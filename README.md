@@ -307,20 +307,16 @@ Ray RbxMouse:GetRay(optional table rayOptions)
    Creates a ray based on the current mouse position. The rayOptions table
    allows you to specify the following optional parameters:
 
-> ```
+```
 float MaxDistance
 	The maximum distance that targets will be within i.e. the length of the
 	ray. Defaults to 1000.
-```
 
-> ```
 <Vector2|UDim2> Position
 	The absolute position on the screen to create the ray from. Does not
 	account for GUI inset, so (0, 0) will always be the top left corner of
     the screen. Defaults to the current mouse position.
-```
 
-> ```
 bool ApplyInset
 	If true, GUI inset will be added to Position so that the value
 	necessary to represent the top left corner of the screen becomes
@@ -329,7 +325,7 @@ bool ApplyInset
 
 Example usage with rayOptions:
 
->```lua
+```lua
 RbxMouse:GetRay({
 	MaxDistance = 512;
     Position = Vector2.new(100, 100);
@@ -355,7 +351,7 @@ RbxMouse:GetRay({
    The filter argument is a function that determines whether a raycast hit is
    valid, or if it should be ignored. It has arguments passed to it:
 
-> ```
+```
 bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3 direction)
 ```
 
