@@ -7,32 +7,32 @@ See repository for detailed documentation :)
 
 -- Properties
 
-bool RbxMouse.Button1				[readonly]
-bool RbxMouse.Button2				[readonly]
-bool RbxMouse.Button3				[readonly]
+bool RbxMouse.Button1            [readonly]
+bool RbxMouse.Button2            [readonly]
+bool RbxMouse.Button3            [readonly]
 
 KeyCode RbxMouse.Button1KeyCode
 KeyCode RbxMouse.Button2KeyCode
 KeyCode RbxMouse.Button3KeyCode
 
-Vector2 RbxMouse.Position			[readonly]
-Vector2 RbxMouse.InsetPosition	[readonly]
+Vector2 RbxMouse.Position        [readonly]
+Vector2 RbxMouse.InsetPosition   [readonly]
 
 -- Signals
 
-RbxMouse.Button1Pressed(bool gameProcessed, InputObject input)
-RbxMouse.Button2Pressed(bool gameProcessed, InputObject input)
-RbxMouse.Button3Pressed(bool gameProcessed, InputObject input)
+RbxMouse.Button1Pressed(InputObject input, bool gameProcessed)
+RbxMouse.Button2Pressed(InputObject input, bool gameProcessed)
+RbxMouse.Button3Pressed(InputObject input, bool gameProcessed)
 
-RbxMouse.Button1Released(float duration, bool gameProcessed, InputObject input)
-RbxMouse.Button2Released(float duration, bool gameProcessed, InputObject input)
-RbxMouse.Button3Released(float duration, bool gameProcessed, InputObject input)
+RbxMouse.Button1Released(float duration, InputObject input, bool gameProcessed)
+RbxMouse.Button2Released(float duration, InputObject input, bool gameProcessed)
+RbxMouse.Button3Released(float duration, InputObject input, bool gameProcessed)
 
-RbxMouse.Scrolled(int direction, bool gameProcessed, InputObject input)
-RbxMouse.ScrolledUp(int direction, bool gameProcessed, InputObject input)
-RbxMouse.ScrolledDown(int direction, bool gameProcessed, InputObject input)
+RbxMouse.Scrolled(int direction, InputObject input, bool gameProcessed)
+RbxMouse.ScrolledUp(int direction, InputObject input, bool gameProcessed)
+RbxMouse.ScrolledDown(int direction, InputObject input, bool gameProcessed)
 
-RbxMouse.Moved(Vector2 delta, bool gameProcessed, InputObject input)
+RbxMouse.Moved(Vector2 delta, InputObject input, bool gameProcessed)
 
 -- Methods
 
@@ -42,10 +42,10 @@ void RbxMouse:SetVisible(bool visible)
 float RbxMouse:GetSensitivity()
 void RbxMouse:SetSensitivity(float sensitivity)
 
-bool RbxMouse:GetEnabled()
 Vector2 RbxMouse:GetDelta()
-array<InputObject> RbxMouse:GetButtonsPressed()
+bool RbxMouse:GetEnabled()
 bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
+array<InputObject> RbxMouse:GetButtonsPressed()
 
 string RbxMouse:GetIcon()
 void RbxMouse:SetIcon(string asset)
@@ -56,21 +56,34 @@ void RbxMouse:ClearIconStack()
 
 MouseBehavior RbxMouse:GetBehavior()
 void RbxMouse:SetBehavior(MouseBehavior behavior)
-void RbxMouse:SetBehaviorEveryFrame(MouseBehavior behavior, optional int renderStepPriority)
+
+void RbxMouse:SetBehaviorEveryFrame(
+   MouseBehavior behavior,
+   optional int renderStepPriority
+)
 void RbxMouse:StopSettingBehaviorEveryFrame()
 
 void RbxMouse:Fire<Signal>(<signalParameters>)
 
-Ray RbxMouse:GetRay(optional table rayOptions)
-	rayOptions: {MaxDistance = number, Position = Vector2/UDim2, ApplyInset = number}
+Ray RbxMouse:GetRay(number maxDistance, <Vector2|UDim2> position)
+
+<void|RaycastResult> RbxMouse:GetTargetIgnore(
+   optional array<Instance> ignoreList
+)
 
 <void|RaycastResult> RbxMouse:GetTarget(
    optional RaycastParams params,
    optional function filter,
-   optional <Ray|table> ray,
-   optional bool canMutateParams
+   optional Ray ray,
+   optional bool mutateParams
 )
-	filter: bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3 direction)
+
+   filter: bool function (
+      RaycastResult result,
+      RaycastParams params,
+      Vector3 origin,
+      Vector3 direction
+   )
 
 Vector2 RbxMouse:AbsoluteToInset(Vector2 absolutePosition)
 Vector2 RbxMouse:InsetToAbsolute(Vector2 insetPosition)
@@ -110,11 +123,23 @@ do
    local guiService = game:GetService("GuiService")
 
    function RbxMouse:AbsoluteToInset(position)
-      return position - guiService:GetGuiInset()
+      local topLeft = guiService:GetGuiInset()
+      if typeof(position) == "Vector2" then
+         position -= topLeft
+      elseif typeof(position) == "UDim2" then
+         position -= UDim2.fromOffset(topLeft.X, topLeft.Y)
+      end
+      return position
    end
 
    function RbxMouse:InsetToAbsolute(position)
-      return position + guiService:GetGuiInset()
+      local topLeft = guiService:GetGuiInset()
+      if typeof(position) == "Vector2" then
+         position += topLeft
+      elseif typeof(position) == "UDim2" then
+         position += UDim2.fromOffset(topLeft.X, topLeft.Y)
+      end
+      return position
    end
 end
 
@@ -154,19 +179,19 @@ do
       then
          button1DownAt = os.clock()
          RbxMouse.Button1 = true
-         RbxMouse:FireButton1Pressed(gameProcessed, input)
+         RbxMouse:FireButton1Pressed(input, gameProcessed)
       elseif (input.UserInputType == UIT_M2) or
          (input.KeyCode == RbxMouse.Button2KeyCode)
       then
          button2DownAt = os.clock()
          RbxMouse.Button2 = true
-         RbxMouse:FireButton2Pressed(gameProcessed, input)
+         RbxMouse:FireButton2Pressed(input, gameProcessed)
       elseif (input.UserInputType == UIT_M3) or
          (input.KeyCode == RbxMouse.Button3KeyCode)
       then
          button3DownAt = os.clock()
          RbxMouse.Button3 = true
-         RbxMouse:FireButton3Pressed(gameProcessed, input)
+         RbxMouse:FireButton3Pressed(input, gameProcessed)
       end
    end)
 
@@ -176,17 +201,17 @@ do
          (input.KeyCode == RbxMouse.Button1KeyCode)
       then
          RbxMouse.Button1 = false
-         RbxMouse:FireButton1Released(os.clock()-button1DownAt, gameProcessed, input)
+         RbxMouse:FireButton1Released(os.clock()-button1DownAt, input, gameProcessed)
       elseif (input.UserInputType == UIT_M2) or
          (input.KeyCode == RbxMouse.Button2KeyCode)
       then
          RbxMouse.Button2 = false
-         RbxMouse:FireButton2Released(os.clock()-button2DownAt, gameProcessed, input)
+         RbxMouse:FireButton2Released(os.clock()-button2DownAt, input, gameProcessed)
       elseif (input.UserInputType == UIT_M3) or
          (input.KeyCode == RbxMouse.Button3KeyCode)
       then
          RbxMouse.Button3 = false
-         RbxMouse:FireButton3Released(os.clock()-button3DownAt, gameProcessed, input)
+         RbxMouse:FireButton3Released(os.clock()-button3DownAt, input, gameProcessed)
       end
    end)
 
@@ -208,13 +233,13 @@ do
          lastRecordedDelta = delta
          lastRecordedDeltaId = currentFrameId
 
-         RbxMouse:FireMoved(delta, gameProcessed, input)
+         RbxMouse:FireMoved(delta, input, gameProcessed)
       elseif (input.UserInputType == UIT_MW) then
-         RbxMouse:FireScrolled(input.Position.Z, gameProcessed, input)
+         RbxMouse:FireScrolled(input.Position.Z, input, gameProcessed)
          if (input.Position.Z > 0) then
-            RbxMouse:FireScrolledUp(input.Position.Z, gameProcessed, input)
+            RbxMouse:FireScrolledUp(input.Position.Z, input, gameProcessed)
          elseif (input.Position.Z < 0) then
-            RbxMouse:FireScrolledDown(input.Position.Z, gameProcessed, input)
+            RbxMouse:FireScrolledDown(input.Position.Z, input, gameProcessed)
          end
       end
    end)
@@ -222,6 +247,11 @@ do
    runService:BindToRenderStep("RbxMouseFrame", Enum.RenderPriority.First.Value, function()
       currentFrameId += 1
    end)
+end
+
+local function invalidArgument(index, name, correctType, value, depth)
+   error(("Argument %d '%s' must be a %s (received value %s of type %s).")
+         :format(index, name, correctType, tostring(value), typeof(value)), depth+1)
 end
 
 do
@@ -236,9 +266,19 @@ do
       return userInputService.MouseBehavior
    end
    function RbxMouse:SetBehavior(behavior)
+      if behavior ~= nil and typeof(behavior) ~= "MouseBehavior" then
+         invalidArgument(1, 'behavior', 'MouseBehavior enum', behavior, 2)
+      end
       userInputService.MouseBehavior = behavior
    end
+
    function RbxMouse:SetBehaviorEveryFrame(behavior, priority)
+      if behavior ~= nil and typeof(behavior) ~= "MouseBehavior" then
+         invalidArgument(1, 'behavior', 'MouseBehavior enum', behavior, 2)
+      end
+      if priority ~= nil and type(priority) ~= "number" then
+         invalidArgument(2, 'priority', 'integer', priority, 2)
+      end
       behavior = behavior or userInputService.MouseBehavior
       priority = priority or Enum.RenderPriority.Camera.Value - 1
       runService:BindToRenderStep("RbxMouseBehavior", priority, function()
@@ -259,9 +299,11 @@ do
    function RbxMouse:GetEnabled()
       return userInputService.MouseEnabled
    end
+
    function RbxMouse:GetDelta()
       local delta = userInputService:GetMouseDelta()
       if delta.Magnitude == 0 then
+         -- Only return the unlocked MouseDelta if it was updated this frame
          if lastRecordedDeltaId == currentFrameId-1 then
             delta = lastRecordedDelta
          end
@@ -270,6 +312,7 @@ do
       end
       return delta
    end
+
    function RbxMouse:GetButtonsPressed()
       return userInputService:GetMouseButtonsPressed()
    end
@@ -295,8 +338,7 @@ do
             mouse.Icon = iconStack[1]
          end
       else
-         error(("Icon 'icon' is not a string (received value %s of type %s)")
-            :format(tostring(icon), typeof(icon)), 2)
+         invalidArgument(1, 'icon', 'string', icon, 2)
       end
    end
 
@@ -306,8 +348,7 @@ do
          iconStack[iconStackCount] = icon or ""
          mouse.Icon = iconStack[iconStackCount]
       else
-         error(("Argument 'icon' is not a string (received value %s of type %s)")
-            :format(tostring(icon), typeof(icon)), 2)
+         invalidArgument(1, 'icon', 'string', icon, 2)
       end
    end
 
@@ -329,8 +370,7 @@ do
          end
          mouse.Icon = iconStack[iconStackCount]
       else
-         error(("Argument 'icon' is not a string (received value %s of type %s)")
-            :format(tostring(icon), typeof(icon)), 2)
+         invalidArgument(1, 'icon', 'string', icon, 2)
       end
    end
 
@@ -350,74 +390,68 @@ end
 do
    local DEFAULT_MAX_DISTANCE = 1000
 
-   function RbxMouse:GetRay(rayOptions)
+   function RbxMouse:GetRay(maxDistance, position)
       local camera = workspace.CurrentCamera
-      local position
-      local maxDistance
-      if rayOptions then
-         if rayOptions.Position then
-            position = RbxMouse.Position
-            if typeof(position) == "UDim2" then
-               position = Vector2.new(
-                  camera.ViewportSize.X*position.X.Scale + position.X.Offset,
-                  camera.ViewportSize.Y*position.Y.Scale + position.Y.Offset
-               )
-            elseif typeof(position) == "Vector2" then
-               position = rayOptions.Position
-            else
-               error(("Ray option 'ViewportPosition' must be a Vector2 or UDim2 (received value %s of type %s).")
-                  :format(tostring(position), typeof(position)), 2)
-            end
-            if rayOptions.ApplyInset then
-               position = RbxMouse:InsetToAbsolute(position)
-            end
-         else
-            position = RbxMouse.Position
-         end
 
-         if rayOptions.MaxDistance then
-            maxDistance = rayOptions.MaxDistance
-            if type(maxDistance) ~= "number" then
-               error(("Ray option 'MaxDistance' must be a number (received value %s of type %s.")
-                  :format(tostring(maxDistance), typeof(maxDistance)), 2)
-            end
+      if maxDistance then
+         if type(maxDistance) ~= "number" then
+            invalidArgument(1, 'maxDistance', 'number', maxDistance, 2)
+         end
+      else
+         maxDistance = DEFAULT_MAX_DISTANCE
+      end
+
+      if position then
+         if typeof(position) == "UDim2" then
+            position = Vector2.new(
+               camera.ViewportSize.X*position.X.Scale + position.X.Offset,
+               camera.ViewportSize.Y*position.Y.Scale + position.Y.Offset
+            )
+         elseif typeof(position) == "Vector2" then
+            position = position
          else
-            maxDistance = DEFAULT_MAX_DISTANCE
+            invalidArgument(2, 'position', 'Vector2 or UDim2', position, 2)
          end
       else
          position = RbxMouse.Position
-         maxDistance = DEFAULT_MAX_DISTANCE
       end
 
       local ray = camera:ViewportPointToRay(position.X, position.Y).Unit
       return Ray.new(ray.Origin, ray.Direction * maxDistance)
    end
 
-   function RbxMouse:GetTarget(params, filter, ray, canMutateParams)
+   function RbxMouse:GetTargetIgnore(ignoreList)
+      if ignoreList ~= nil and type(ignoreList) ~= "table" then
+         invalidArgument(1, 'ignoreList', 'list of Instances to ignore', ignoreList, 2)
+      end
+      local params = RaycastParams.new()
+      if ignoreList then
+         params.FilterType = Enum.RaycastFilterType.Blacklist
+         params.FilterDescendantsInstances = ignoreList
+      end
+      local ray = RbxMouse:GetRay()
+      return RbxMouse.Raycaster(ray.Origin, ray.Direction, params, nil, true)
+   end
+
+   function RbxMouse:GetTarget(params, filter, ray, mutateParams)
       if params == nil then
          params = RaycastParams.new()
-         canMutateParams = true
+         mutateParams = true
       elseif typeof(params) ~= "RaycastParams" then
-         error(("Argument 'params' must be a RaycastParams instance (received value %s of type %s).")
-            :format(tostring(params), typeof(params), 2))
+         invalidArgument(1, 'params', 'RaycastParams instance', params, 2)
       end
 
       if filter ~= nil and type(filter) ~= "function" then
-         error(("Argument 'filter' must be a function (received value %s of type %s).")
-            :format(tostring(filter), typeof(filter)), 2)
+         invalidArgument(2, 'filter', 'function', filter, 2)
       end
 
-      if ray ~= nil then
-         if type(ray) == "table" then
-            ray = RbxMouse:GetRay(ray)
-         elseif typeof(ray) ~= "Ray" then
-            error(("Argument 'ray' must be a Ray or a table of ray options (received value %s of type %s).")
-               :format(tostring(ray), typeof(ray), 2))
-         end
+      if ray ~= nil and typeof(ray) ~= "Ray" then
+         invalidArgument(3, "ray", "Ray instance", ray, 2)
       else
          ray = RbxMouse:GetRay()
       end
-      return RbxMouse.Raycaster(ray.Origin, ray.Direction, params, filter, canMutateParams)
+
+      return RbxMouse.Raycaster(ray.Origin, ray.Direction, params, filter, mutateParams)
    end
 
    local function removeFromWhitelist(list, instance)
@@ -448,8 +482,8 @@ do
       end
    end
 
-   function RbxMouse.Raycaster(origin, direction, raycastParams, filter, canMutateParams)
-      local originalInstances = (not canMutateParams) and raycastParams.FilterDescendantsInstances
+   function RbxMouse.Raycaster(origin, direction, raycastParams, filter, mutateParams)
+      local originalInstances = (not mutateParams) and raycastParams.FilterDescendantsInstances
       local currentOrigin = origin
       local currentDirection = direction
       local result

@@ -13,32 +13,32 @@ Notable features:
 ```
 -- Properties
 
-bool RbxMouse.Button1				[readonly]
-bool RbxMouse.Button2				[readonly]
-bool RbxMouse.Button3				[readonly]
+bool RbxMouse.Button1            [readonly]
+bool RbxMouse.Button2            [readonly]
+bool RbxMouse.Button3            [readonly]
 
 KeyCode RbxMouse.Button1KeyCode
 KeyCode RbxMouse.Button2KeyCode
 KeyCode RbxMouse.Button3KeyCode
 
-Vector2 RbxMouse.Position			[readonly]
-Vector2 RbxMouse.InsetPosition		[readonly]
+Vector2 RbxMouse.Position   	   [readonly]
+Vector2 RbxMouse.InsetPosition   [readonly]
 
 -- Signals
 
-RbxMouse.Button1Pressed(bool gameProcessed, InputObject input)
-RbxMouse.Button2Pressed(bool gameProcessed, InputObject input)
-RbxMouse.Button3Pressed(bool gameProcessed, InputObject input)
+RbxMouse.Button1Pressed(InputObject input, bool gameProcessed)
+RbxMouse.Button2Pressed(InputObject input, bool gameProcessed)
+RbxMouse.Button3Pressed(InputObject input, bool gameProcessed)
 
-RbxMouse.Button1Released(float duration, bool gameProcessed, InputObject input)
-RbxMouse.Button2Released(float duration, bool gameProcessed, InputObject input)
-RbxMouse.Button3Released(float duration, bool gameProcessed, InputObject input)
+RbxMouse.Button1Released(float duration, InputObject input, bool gameProcessed)
+RbxMouse.Button2Released(float duration, InputObject input, bool gameProcessed)
+RbxMouse.Button3Released(float duration, InputObject input, bool gameProcessed)
 
-RbxMouse.Scrolled(int direction, bool gameProcessed, InputObject input)
-RbxMouse.ScrolledUp(int direction, bool gameProcessed, InputObject input)
-RbxMouse.ScrolledDown(int direction, bool gameProcessed, InputObject input)
+RbxMouse.Scrolled(int direction, InputObject input, bool gameProcessed)
+RbxMouse.ScrolledUp(int direction, InputObject input, bool gameProcessed)
+RbxMouse.ScrolledDown(int direction, InputObject input, bool gameProcessed)
 
-RbxMouse.Moved(Vector2 delta, bool gameProcessed, InputObject input)
+RbxMouse.Moved(Vector2 delta, InputObject input, bool gameProcessed)
 
 -- Methods
 
@@ -48,10 +48,10 @@ void RbxMouse:SetVisible(bool visible)
 float RbxMouse:GetSensitivity()
 void RbxMouse:SetSensitivity(float sensitivity)
 
-bool RbxMouse:GetEnabled()
 Vector2 RbxMouse:GetDelta()
-array<InputObject> RbxMouse:GetButtonsPressed()
+bool RbxMouse:GetEnabled()
 bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
+array<InputObject> RbxMouse:GetButtonsPressed()
 
 string RbxMouse:GetIcon()
 void RbxMouse:SetIcon(string asset)
@@ -62,21 +62,34 @@ void RbxMouse:ClearIconStack()
 
 MouseBehavior RbxMouse:GetBehavior()
 void RbxMouse:SetBehavior(MouseBehavior behavior)
-void RbxMouse:SetBehaviorEveryFrame(MouseBehavior behavior, optional int renderStepPriority)
+
+void RbxMouse:SetBehaviorEveryFrame(
+   MouseBehavior behavior,
+   optional int renderStepPriority
+)
 void RbxMouse:StopSettingBehaviorEveryFrame()
 
 void RbxMouse:Fire<Signal>(<signalParameters>)
 
-Ray RbxMouse:GetRay(optional table rayOptions)
-	rayOptions: {MaxDistance = number, Position = Vector2/UDim2, ApplyInset = number}
+Ray RbxMouse:GetRay(number maxDistance, <Vector2|UDim2> position)
+
+<void|RaycastResult> RbxMouse:GetTargetIgnore(
+   optional array<Instance> ignoreList
+)
 
 <void|RaycastResult> RbxMouse:GetTarget(
    optional RaycastParams params,
    optional function filter,
-   optional <Ray|table> ray,
-   optional bool canMutateParams
+   optional Ray ray,
+   optional bool mutateParams
 )
-	filter: bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3 direction)
+
+   filter: bool function (
+      RaycastResult result,
+      RaycastParams params,
+      Vector3 origin,
+      Vector3 direction
+   )
 
 Vector2 RbxMouse:AbsoluteToInset(Vector2 absolutePosition)
 Vector2 RbxMouse:InsetToAbsolute(Vector2 insetPosition)
@@ -130,9 +143,9 @@ Vector2 RbxMouse.InsetPosition
 ## Signals
 
 ```
-RbxMouse.Button1Pressed(bool gameProcessed, InputObject input)
-RbxMouse.Button2Pressed(bool gameProcessed, InputObject input)
-RbxMouse.Button3Pressed(bool gameProcessed, InputObject input)
+RbxMouse.Button1Pressed(InputObject input, bool gameProcessed)
+RbxMouse.Button2Pressed(InputObject input, bool gameProcessed)
+RbxMouse.Button3Pressed(InputObject input, bool gameProcessed)
 ```
 
    These signals fire when mouse buttons begin being pressed. The `input` parameter can be used to determine the source of the button press (whether it was from the mouse, from a KeyCode, or from touch - and if so, which touch).
@@ -140,9 +153,9 @@ RbxMouse.Button3Pressed(bool gameProcessed, InputObject input)
 ---
 
 ```
-RbxMouse.Button1Released(float duration, bool gameProcessed, InputObject input)
-RbxMouse.Button2Released(float duration, bool gameProcessed, InputObject input)
-RbxMouse.Button3Released(float duration, bool gameProcessed, InputObject input)
+RbxMouse.Button1Released(float duration, InputObject input, bool gameProcessed)
+RbxMouse.Button2Released(float duration, InputObject input, bool gameProcessed)
+RbxMouse.Button3Released(float duration, InputObject input, bool gameProcessed)
 ```
 
    These signals fire when mouse buttons are released. The duration argument tells you how many seconds the button was held down for. The `input` parameter can be used to determine the source of the button release (whether it was from the mouse, from a KeyCode, or from touch - and if so, which touch).
@@ -150,9 +163,9 @@ RbxMouse.Button3Released(float duration, bool gameProcessed, InputObject input)
 ---
 
 ```
-RbxMouse.Scrolled(int direction, bool gameProcessed, InputObject input)
-RbxMouse.ScrolledUp(int direction, bool gameProcessed, InputObject input)
-RbxMouse.ScrolledDown(int direction, bool gameProcessed, InputObject input)
+RbxMouse.Scrolled(int direction, InputObject input, bool gameProcessed)
+RbxMouse.ScrolledUp(int direction, InputObject input, bool gameProcessed)
+RbxMouse.ScrolledDown(int direction, InputObject input, bool gameProcessed)
 ```
 
    These signals fire when the mouse wheel is scrolled. `Scrolled` will fire for all scrolls, and `ScrolledUp` and `ScrolledDown` will fire when direction is positive and negative respectively. The direction the wheel was scrolled in is passed to all signals (not just Scrolled) for convenience.
@@ -160,7 +173,7 @@ RbxMouse.ScrolledDown(int direction, bool gameProcessed, InputObject input)
 ---
 
 ```
-RbxMouse.Moved(Vector2 delta, bool gameProcessed, InputObject input)
+RbxMouse.Moved(Vector2 delta, InputObject input, bool gameProcessed)
 ```
 
    This signal fires when the mouse is moved. The `delta` parameter describes how far in pixels the mouse moved, and is multiplied by the mouse sensitivity set by `RbxMouse:SetSensitivity()`.
@@ -197,7 +210,7 @@ void RbxMouse:PushIcon(string asset)
 void RbxMouse:PopIcon(optional string asset)
 ```
 
-   Pop an item from the stack. If an iconicon is provided, only items with that icon will be removed. This is useful if icons will be pushed to the stack in an unknown order and you want to remove only a specific icon.
+   Pop an item from the stack. If an icon is provided, only items with that icon will be removed. This is useful if icons will be pushed to the stack in an unknown order and you want to remove only a specific icon.
 
 ---
 
@@ -231,7 +244,7 @@ MouseBehavior RbxMouse:GetBehavior()
 void RbxMouse:SetBehavior(MouseBehavior behavior)
 ```
 
-   Gets and sets UserInputService.MouseBehavior.
+   Gets and sets `UserInputService.MouseBehavior`.
 
 ---
 
@@ -247,7 +260,7 @@ void RbxMouse:SetBehaviorEveryFrame(MouseBehavior behavior, optional int renderS
 void RbxMouse:StopSettingBehaviorEveryFrame()
 ```
 
-   Unbinds the mouse behavior callback mentioned above.
+   Unbinds the above mouse behavior callback.
 
 ---
 
@@ -261,26 +274,18 @@ void RbxMouse:SetSensitivity(float sensitivity)
 ---
 
 ```
-bool RbxMouse:GetEnabled()
-```
-
-   Gets `UserInputService.MouseEnabled`.
-
----
-
-```
 Vector2 RbxMouse:GetDelta()
 ```
 
-   Returns `UserInputService.MouseDelta` if the mouse is locked, otherwise if the mouse is free it returns the mouse delta this frame. The return value is multiplied by the mouse sensitivity set by `RbxMouse:SetSensitivity()`. Unlike the Roblox APIs, this delta will be nonzero regardless of MouseBehavior (not just when it is set to LockCenter).
+   Returns `UserInputService.MouseDelta` if the mouse is locked, otherwise if the mouse is free it returns the mouse delta this frame. Before being returned, the delta is multiplied by the mouse sensitivity set by `RbxMouse:SetSensitivity()`. Unlike the Roblox APIs, this delta will be nonzero regardless of MouseBehavior (not just when it is set to LockCenter).
 
 ---
 
 ```
-array<InputObject> RbxMouse:GetButtonsPressed()
+bool RbxMouse:GetEnabled()
 ```
 
-   Calls `UserInputService:GetMouseButtonsPressed()`.
+   Gets `UserInputService.MouseEnabled`, which is true if the user's device has a mouse available or false otherwise.
 
 ---
 
@@ -293,45 +298,78 @@ bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
 ---
 
 ```
-void RbxMouse:Fire<Signal>(<signalParameters>)
+array<InputObject> RbxMouse:GetButtonsPressed()
 ```
 
-   e.g. `RbxMouse:FireButton1Pressed(false, true, false)`
+   Calls `UserInputService:GetMouseButtonsPressed()`.
 
 ---
 
 ```
-Ray RbxMouse:GetRay(optional table rayOptions)
+void RbxMouse:Fire<Signal>(... signalParameters)
 ```
 
-   Creates a ray based on the current mouse position. The rayOptions table
-   allows you to specify the following optional parameters:
+   Fires a RbxMouse signal with the name after 'Fire'. Signal parameters is a
+   tuple of any values which will be passed to the signal callbacks. Make sure
+   to check they are of the correct type and are in the right order.
+
+   Examples:
+   ```lua
+   RbxMouse:FireButton1Pressed(mouseButton1InputObject, true)
+
+   RbxMouse:FireButton3Released(1.5, mouseButton1InputObject, true)
+
+   RbxMouse:FireMoved(Vector2.new(10, 10), moveInputObject, true)
+   ```
+
+   Some of these signals require InputObjects, which are not creatable by scripts.
+   How you deal with is entirely up to you, as RbxMouse does not use these signals internally.
+
+   For example, you could pass in a dummy table (pretending to be an InputObject with the properties your callbacks use) or `nil`.
+   Passing in `nil` may be useful as a convention so that your callbacks can know when the signal has been fired manually:
+
+   ```lua
+      RbxMouse.Button1Pressed:Connect(function(inputObject, gameProcessed)
+         if not inputObject then
+            -- we reach here if the signal was fired manually by your code
+         else
+            -- otherwise we know this was triggered by real user input
+         end
+      end)
+
+      RbxMouse:FireButton1Pressed(nil, true)
+   ```
+
+---
 
 ```
-float MaxDistance
-	The maximum distance that targets will be within i.e. the length of the
-	ray. Defaults to 1000.
-
-<Vector2|UDim2> Position
-	The absolute position on the screen to create the ray from. Does not
-	account for GUI inset, so (0, 0) will always be the top left corner of
-    the screen. Defaults to the current mouse position.
-
-bool ApplyInset
-	If true, GUI inset will be added to Position so that the value
-	necessary to represent the top left corner of the screen becomes
-	something like (0, -36). Defaults to false.
+Ray RbxMouse:GetRay(
+   optional float maxDistance,
+   optional <Vector2|UDim2> position
+)
 ```
 
-Example usage with rayOptions:
+   Creates a ray from the current mouse position. The ray will have a length of
+   `maxDistance`(defaulting to 1000).
 
-```lua
-RbxMouse:GetRay({
-	MaxDistance = 512;
-    Position = Vector2.new(100, 100);
-    UseInset = true;
-})
+   If the `position` argument is provided, the ray will come from that position
+   on the screen instead of the mouse position. This position does not include
+   GUI inset, so the top left corner of the screen will always be `(0, 0)`.
+
+   If your position is in is in inset (AKA 'screen') space, you can convert it
+   first using `RbxMouse:InsetToAbsolute(position)` (see documentation further
+   below).
+
+---
+
 ```
+<void|RaycastResult> RbxMouse:GetTargetIgnore(
+   optional array<Instance> ignoreList
+)
+```
+
+   Performs a raycast to get the current mouse target, ignoring instances
+   (and their descendants) in the `ignoreList` argument if it is provided.
 
 ---
 
@@ -339,8 +377,8 @@ RbxMouse:GetRay({
 <void|RaycastResult> RbxMouse:GetTarget(
    optional RaycastParams params,
    optional function filter,
-   optional <Ray|table> ray,
-   optional bool canMutateParams
+   optional Ray ray,
+   optional bool mutateParams
 )
 ```
    Performs a raycast to get the current mouse target. The params argument can
@@ -352,7 +390,12 @@ RbxMouse:GetRay({
    valid, or if it should be ignored. It has arguments passed to it:
 
 ```
-bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3 direction)
+bool filter (
+   RaycastResult result,
+   RaycastParams params,
+   Vector3 origin,
+   Vector3 direction
+)
 ```
 
    All arguments to this function are guaranteed to not be nil. Returns true if the result should be considered a hit, false if not and the result should be
@@ -363,7 +406,7 @@ bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3
    result of the call to `RbxMouse:GetRay()` - in other words, the ray from the
    mouse's current position.
 
-   The `canMutateParams` argument is to be passed to the raycaster function. This
+   The `mutateParams` argument is to be passed to the raycaster function. This
    defines whether the RaycastParams instance given can have its
    FilterDescendantsInstances list be mutated when performing the raycast. This
    defaults to false, which is useful if you want to reuse the same
@@ -379,7 +422,7 @@ bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3
    Vector3 direction,
    RaycastParams raycastParams,
    optional function filter,
-   optional bool canMutateParams
+   optional bool mutateParams
 )
 ```
 
@@ -388,7 +431,7 @@ bool filter (RaycastResult result, RaycastParams params, Vector3 origin, Vector3
    you wish. The first three arguments are part of the normal `workspace:Raycast()` API. See documentation for `RbxMouse:GetTarget()` for the last two
    parameters.
 
---
+---
 
 ```
 Vector2 RbxMouse:AbsoluteToInset(Vector2 absolutePosition)
@@ -435,15 +478,26 @@ bool RbxMouse.FILTER_VISIBLE_OR_CANCOLLIDE(RaycastResult result)
 
 # Contrived examples
 
-Simple mouse target:
+Get mouse target:
 
 ```lua
 -- Raycast from current mouse position, hitting anything.
 local result = RbxMouse:GetTarget()
+if result then
+   -- a hit was detected
+end
 ```
 
-Raycasting with any ray, RaycastParams, and a filter function:
+Simple mouse target with ignore list:
 
+```lua
+-- Raycast from current mouse position, hitting anything except instances
+-- that are inside the ignore list.
+local ignoreList = {instanceToIgnore}
+local result = RbxMouse:GetTargetIgnore(ignoreList)
+```
+
+More complicated raycasting with any ray, RaycastParams, and a filter function:
 ```lua
 -- Ignore the player's character.
 local params = RaycastParams.new()
@@ -464,15 +518,11 @@ Raycasting from center of screen and only hitting very specific parts:
 local function customFilter(result, params, origin, direction)
 	return
  	   (result.Instance.Name == "HitMe") and
-       (result.Instance:GetAttribute("CanHit") == true)
+      (result.Instance:GetAttribute("CanHit") == true)
 end
 
-local ray = {
-	-- Will not find any hits further than 512 studs.
-	MaxDistance = 512;
-	-- Raycast from center of the screen.
-	Position = workspace.CurrentCamera.ViewportSize/2;
-}
+-- Raycast from the center of the screen and with a max distance of 512 studs.
+local ray = RbxMouse:GetRay(512, workspace.CurrentCamera.ViewportSize/2)
 
 -- No raycast params, so it will hit anything as long as the customFilter function accepts the hit.
 local result = RbxMouse:GetTarget(nil, customFilter, ray)
@@ -531,21 +581,21 @@ end)
 game:GetService("RunService").RenderStepped:Connect(function()
 	local character = game.Players.LocalPlayer.Character
 	if character then
-		local head = character:FindFirstChild("Head")
-		if head then
-			camera.CameraType = Enum.CameraType.Scriptable
-			camera.Focus = CFrame.new(head.Position)
-			local offset = Vector3.new(
-				math.sin(angleX)*math.cos(angleY),
-				math.sin(angleY),
-				math.cos(angleX)*math.cos(angleY)
-			)
-			camera.CFrame = CFrame.lookAt(head.Position, head.Position + offset)
-		else
-			camera.CameraType = Enum.CameraType.Custom
-		end
+   local head = character:FindFirstChild("Head")
+   if head then
+   	camera.CameraType = Enum.CameraType.Scriptable
+   	camera.Focus = CFrame.new(head.Position)
+   	local offset = Vector3.new(
+      math.sin(angleX)*math.cos(angleY),
+      math.sin(angleY),
+      math.cos(angleX)*math.cos(angleY)
+   	)
+   	camera.CFrame = CFrame.lookAt(head.Position, head.Position + offset)
+   else
+   	camera.CameraType = Enum.CameraType.Custom
+   end
 	else
-		camera.CameraType = Enum.CameraType.Custom
+   camera.CameraType = Enum.CameraType.Custom
 	end
 end)
 ```
@@ -569,7 +619,7 @@ RbxMouse.Button1Pressed:Connect(function()
          	:format(targetResult.Instance.Name, targetPlayer.Name))
       else
          print(("Hit part %s")
-         	:format(targetResult.Instance.Name))
+            :format(targetResult.Instance.Name))
       end
    end
 end)
@@ -577,5 +627,6 @@ end)
 
 # Features in consideration
 
-- Keeping track of all InputObjects that are active and only performing certain actions when InputObjects are equal. On the user-facing side, this would require more than a single ``RbxMouse.Button*` boolean property for each button. Mostly only useful for touch input, or customisable handling of input method changes during runtime.
-- Allow multiple different KeyCodes to trigger each button. Will probably make the `RbxMouse.Button*KeyCode` properties arrays instead of single values.
+- Keeping track of all InputObjects that are active and only performing certain actions when InputObjects are equal. On the user-facing side, this would require more than a single ``RbxMouse.Button`` boolean property for each button. Mostly only useful for touch input, or customisable handling of input method changes during runtime.
+- The above feature would also allow RbxMouse:GetButtonsPressed() to return touch and gamepad InputObjects as well.
+- Allow multiple different KeyCodes to trigger each button. Make the `RbxMouse.Button*KeyCode` properties be arrays instead of single values?
