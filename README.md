@@ -511,8 +511,7 @@ Vector2 RbxMouse:InsetToAbsolute(Vector2 insetPosition)
 
 ## Filter function presets
 
-Four predefined filter functions for use in the GetTarget/Raycaster filter
-parameter.
+Four predefined filter functions for use in the `filter` argument for `RbxMouse:GetTarget()` and `RbxMouse.Raycaster`.
 
 ---
 
@@ -673,5 +672,5 @@ end)
 # Features in consideration
 
 - Keeping track of all InputObjects that are active and only performing certain actions when InputObjects are equal. On the user-facing side, this would require more than a single `RbxMouse.Button` boolean property for each button. Mostly only useful for touch input, or customisable handling of input method changes during runtime.
-- The above feature would also allow RbxMouse:GetButtonsPressed() to return touch and gamepad InputObjects as well.
+- The above feature would also allow `RbxMouse:GetButtonsPressed()` to return touch and KeyCode InputObjects as well.
 - Allow multiple different KeyCodes to trigger each button. Make the `RbxMouse.Button*KeyCode` properties be arrays instead of single values?
