@@ -414,6 +414,17 @@ Ray RbxMouse:GetRay(
    Performs a raycast to get the current mouse target, ignoring instances
    (and their descendants) in the `ignoreList` argument if it is provided.
 
+   Example:
+   ```lua
+   -- Raycast from current mouse position, hitting anything except instances
+   -- that are inside the ignore list.
+   local ignoreList = {instanceToIgnore}
+   local result = RbxMouse:GetTargetIgnore(ignoreList)
+   if result then
+      -- a hit was detected
+   end
+   ```
+
 ---
 
 ```
@@ -455,6 +466,17 @@ bool filter (
    table permanently modified. By default, the argument is false and will not
    allow modifications, but there may be some occasions where you find it more
    efficient to allow FilterDescendantsInstances to be changed.
+
+   Example:
+   ```lua
+   -- Raycast from current mouse position, hitting anything.
+   local result = RbxMouse:GetTarget()
+   if result then
+      -- a hit was detected
+   end
+   ```
+
+   For more examples, see the "Contrived examples" section below.
 
 ---
 
@@ -521,25 +543,6 @@ bool RbxMouse.FILTER_VISIBLE_OR_CANCOLLIDE(RaycastResult result)
 
 # Contrived examples
 
-Get mouse target:
-
-```lua
--- Raycast from current mouse position, hitting anything.
-local result = RbxMouse:GetTarget()
-if result then
-   -- a hit was detected
-end
-```
-
-Simple mouse target with ignore list:
-
-```lua
--- Raycast from current mouse position, hitting anything except instances
--- that are inside the ignore list.
-local ignoreList = {instanceToIgnore}
-local result = RbxMouse:GetTargetIgnore(ignoreList)
-```
-
 More complicated raycasting with any ray, RaycastParams, and a filter function:
 ```lua
 -- Ignore the player's character.
@@ -570,7 +573,6 @@ local ray = RbxMouse:GetRay(512, workspace.CurrentCamera.ViewportSize/2)
 -- No raycast params, so it will hit anything as long as the customFilter function accepts the hit.
 local result = RbxMouse:GetTarget(nil, customFilter, ray)
 ```
-
 
 Using the mouse icon stack:
 
