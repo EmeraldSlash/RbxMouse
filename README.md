@@ -190,7 +190,7 @@ RbxMouse.Button2Released(float duration, InputObject input, bool gameProcessed)
 RbxMouse.Button3Released(float duration, InputObject input, bool gameProcessed)
 ```
 
-   These signals fire when mouse buttons are released. The duration argument
+   These signals fire when mouse buttons are released. The `duration` parameter
    tells you how many seconds the button was held down for. The `input`
    parameter can be used to determine the source of the button release
    (whether it was from the mouse, from a KeyCode, or from touch - and if so,
