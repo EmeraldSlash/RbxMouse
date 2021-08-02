@@ -11,18 +11,23 @@ Notable features:
 # Quick Reference
 
 ```
+
 -- Properties
 
-bool RbxMouse.Button1            [readonly]
-bool RbxMouse.Button2            [readonly]
-bool RbxMouse.Button3            [readonly]
+bool RbxMouse.Button1                      [readonly]
+bool RbxMouse.Button2                      [readonly]
+bool RbxMouse.Button3                      [readonly]
+
+array<InputObject> RbxMouse.Button1Inputs  [readonly]
+array<InputObject> RbxMouse.Button2Inputs  [readonly]
+array<InputObject> RbxMouse.Button3Inputs  [readonly]
+
+Vector2 RbxMouse.Position                  [readonly]
+Vector2 RbxMouse.InsetPosition             [readonly]
 
 KeyCode RbxMouse.Button1KeyCode
 KeyCode RbxMouse.Button2KeyCode
 KeyCode RbxMouse.Button3KeyCode
-
-Vector2 RbxMouse.Position   	   [readonly]
-Vector2 RbxMouse.InsetPosition   [readonly]
 
 -- Signals
 
@@ -111,18 +116,26 @@ bool RbxMouse.Button3
 ```
 
    These are true when the respective buttons are pressed, and false when not.
+   If the player uses multiple inputs for a single button, the most recent
+   inputs will affect the value.
+
+   e.g. The sequence `left mouse button down -> touch start -> left mouse button
+   up`, will result in RbxMouse.Button1 being `false` because the most recent
+   input was `left mouse button up` even though the touch is still happening.
 
 ---
 
 ```
-KeyCode RbxMouse.Button1KeyCode
-KeyCode RbxMouse.Button2KeyCode
-KeyCode RbxMouse.Button3KeyCode
+array<InputObject> RbxMouse.Button1Inputs
+array<InputObject> RbxMouse.Button2Inputs
+array<InputObject> RbxMouse.Button3Inputs
 ```
 
-   The optional KeyCodes that can trigger mouse button presses. Useful for
-   gamepad support. Button1KeyCode defaults to `KeyCode.ButtonA`, the others to
-   nil.
+   An array of InputObjects currently active for each button. When an input
+   starts (e.g. the left mouse button is pressed, or the player touches the
+   touchscreen) its InputObject is added to the array. When an input finishes
+   (e.g. the left mouse button is released or the player stops touching the
+   screen) its InputObject is removed from the array.
 
 ---
 
@@ -141,6 +154,18 @@ Vector2 RbxMouse.InsetPosition
 
    The position of the mouse on the screen after accounting for GUI inset. Top
    left corner of the screen will be something like `(0, -36)`.
+
+---
+
+```
+KeyCode RbxMouse.Button1KeyCode
+KeyCode RbxMouse.Button2KeyCode
+KeyCode RbxMouse.Button3KeyCode
+```
+
+   The optional KeyCodes that can trigger mouse button presses. Useful for
+   gamepad support. Button1KeyCode defaults to `KeyCode.ButtonA`, the others to
+   nil.
 
 ---
 
@@ -311,7 +336,7 @@ void RbxMouse:SetSensitivity(float sensitivity)
 Vector2 RbxMouse:GetDelta()
 ```
 
-   Returns `UserInputService.MouseDelta` if the mouse is locked, otherwise if
+   Returns `UserInputService:GetMouseDelta()` if the mouse is locked, otherwise if
    the mouse is free it returns the mouse delta this frame. Before being
    returned, the delta is multiplied by the mouse sensitivity set by
    `RbxMouse:SetSensitivity()`. Unlike the Roblox APIs, this delta will be
@@ -561,8 +586,8 @@ Raycasting from center of screen and only hitting very specific parts:
 ```lua
 -- Only hit instances named "HitMe" and with "CanHit" attribute set to boolean value true.
 local function customFilter(result, params, origin, direction)
-	return
- 	   (result.Instance.Name == "HitMe") and
+   return
+      (result.Instance.Name == "HitMe") and
       (result.Instance:GetAttribute("CanHit") == true)
 end
 
@@ -583,21 +608,21 @@ local RIGHT_ICON = "rbxassetid://6733496085"
 RbxMouse:SetIcon(DEFAULT_ICON)
 
 RbxMouse.Button1Pressed:Connect(function()
-	RbxMouse:PushIcon(LEFT_ICON)
+   RbxMouse:PushIcon(LEFT_ICON)
 end)
 RbxMouse.Button1Released:Connect(function()
-	RbxMouse:PopIcon(LEFT_ICON)
+   RbxMouse:PopIcon(LEFT_ICON)
 end)
 
 RbxMouse.Button2Pressed:Connect(function()
-	RbxMouse:PushIcon(RIGHT_ICON)
+   RbxMouse:PushIcon(RIGHT_ICON)
 end)
 RbxMouse.Button2Released:Connect(function()
-	RbxMouse:PopIcon(RIGHT_ICON)
+   RbxMouse:PopIcon(RIGHT_ICON)
 end)
 
 RbxMouse.Button3Pressed:Connect(function()
-	RbxMouse:ClearIconStack()
+   RbxMouse:ClearIconStack()
 end)
 ```
 
@@ -617,30 +642,30 @@ RbxMouse:SetVisible(false)
 RbxMouse:SetSensitivity(0.002)
 
 RbxMouse.Moved:Connect(function(delta)
-	-- Use mouse delta (which is in pixel units) to modify camera angle
-	angleX = angleX - delta.X
-	angleY = math.clamp(angleY - delta.Y, MIN_Y, MAX_Y)
+   -- Use mouse delta (which is in pixel units) to modify camera angle
+   angleX = angleX - delta.X
+   angleY = math.clamp(angleY - delta.Y, MIN_Y, MAX_Y)
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
-	local character = game.Players.LocalPlayer.Character
-	if character then
-   local head = character:FindFirstChild("Head")
-   if head then
-   	camera.CameraType = Enum.CameraType.Scriptable
-   	camera.Focus = CFrame.new(head.Position)
-   	local offset = Vector3.new(
-      math.sin(angleX)*math.cos(angleY),
-      math.sin(angleY),
-      math.cos(angleX)*math.cos(angleY)
-   	)
-   	camera.CFrame = CFrame.lookAt(head.Position, head.Position + offset)
+   local character = game.Players.LocalPlayer.Character
+   if character then
+      local head = character:FindFirstChild("Head")
+      if head then
+         camera.CameraType = Enum.CameraType.Scriptable
+         camera.Focus = CFrame.new(head.Position)
+         local offset = Vector3.new(
+            math.sin(angleX)*math.cos(angleY),
+            math.sin(angleY),
+            math.cos(angleX)*math.cos(angleY)
+         )
+         camera.CFrame = CFrame.lookAt(head.Position, head.Position + offset)
+      else
+         camera.CameraType = Enum.CameraType.Custom
+      end
    else
-   	camera.CameraType = Enum.CameraType.Custom
+      camera.CameraType = Enum.CameraType.Custom
    end
-	else
-   camera.CameraType = Enum.CameraType.Custom
-	end
 end)
 ```
 
@@ -660,7 +685,7 @@ RbxMouse.Button1Pressed:Connect(function()
       local targetPlayer = players:GetPlayerFromCharacter(targetResult.Instance.Parent)
       if targetPlayer then
          print(("Hit part %s (of player %s)")
-         	:format(targetResult.Instance.Name, targetPlayer.Name))
+            :format(targetResult.Instance.Name, targetPlayer.Name))
       else
          print(("Hit part %s")
             :format(targetResult.Instance.Name))
@@ -668,9 +693,3 @@ RbxMouse.Button1Pressed:Connect(function()
    end
 end)
 ```
-
-# Features in consideration
-
-- Keeping track of all InputObjects that are active and only performing certain actions when InputObjects are equal. On the user-facing side, this would require more than a single `RbxMouse.Button` boolean property for each button. Mostly only useful for touch input, or customisable handling of input method changes during runtime.
-- The above feature would also allow `RbxMouse:GetButtonsPressed()` to return touch and KeyCode InputObjects as well.
-- Allow multiple different KeyCodes to trigger each button. Make the `RbxMouse.Button*KeyCode` properties be arrays instead of single values?

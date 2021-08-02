@@ -7,16 +7,20 @@ See repository for detailed documentation :)
 
 -- Properties
 
-bool RbxMouse.Button1            [readonly]
-bool RbxMouse.Button2            [readonly]
-bool RbxMouse.Button3            [readonly]
+bool RbxMouse.Button1                      [readonly]
+bool RbxMouse.Button2                      [readonly]
+bool RbxMouse.Button3                      [readonly]
+
+array<InputObject> RbxMouse.Button1Inputs  [readonly]
+array<InputObject> RbxMouse.Button2Inputs  [readonly]
+array<InputObject> RbxMouse.Button3Inputs  [readonly]
+
+Vector2 RbxMouse.Position                  [readonly]
+Vector2 RbxMouse.InsetPosition             [readonly]
 
 KeyCode RbxMouse.Button1KeyCode
 KeyCode RbxMouse.Button2KeyCode
 KeyCode RbxMouse.Button3KeyCode
-
-Vector2 RbxMouse.Position        [readonly]
-Vector2 RbxMouse.InsetPosition   [readonly]
 
 -- Signals
 
@@ -164,9 +168,13 @@ do
    RbxMouse.Button2KeyCode = nil
    RbxMouse.Button3KeyCode = nil
 
-   RbxMouse.Button1 = false;
-   RbxMouse.Button2 = false;
-   RbxMouse.Button3 = false;
+   RbxMouse.Button1 = false
+   RbxMouse.Button2 = false
+   RbxMouse.Button3 = false
+
+   RbxMouse.Button1Inputs = {}
+   RbxMouse.Button2Inputs = {}
+   RbxMouse.Button3Inputs = {}
 
    local button1DownAt = 0
    local button2DownAt = 0
@@ -179,18 +187,21 @@ do
       then
          button1DownAt = os.clock()
          RbxMouse.Button1 = true
+         RbxMouse.Button1Inputs[#RbxMouse.Button1Inputs+1] = input
          RbxMouse:FireButton1Pressed(input, gameProcessed)
       elseif (input.UserInputType == UIT_M2) or
          (input.KeyCode == RbxMouse.Button2KeyCode)
       then
          button2DownAt = os.clock()
          RbxMouse.Button2 = true
+         RbxMouse.Button2Inputs[#RbxMouse.Button2Inputs+1] = input
          RbxMouse:FireButton2Pressed(input, gameProcessed)
       elseif (input.UserInputType == UIT_M3) or
          (input.KeyCode == RbxMouse.Button3KeyCode)
       then
          button3DownAt = os.clock()
          RbxMouse.Button3 = true
+         RbxMouse.Button3Inputs[#RbxMouse.Button3Inputs+1] = input
          RbxMouse:FireButton3Pressed(input, gameProcessed)
       end
    end)
@@ -201,16 +212,19 @@ do
          (input.KeyCode == RbxMouse.Button1KeyCode)
       then
          RbxMouse.Button1 = false
+         table.remove(RbxMouse.Button1Inputs, table.find(RbxMouse.Button1Inputs, input))
          RbxMouse:FireButton1Released(os.clock()-button1DownAt, input, gameProcessed)
       elseif (input.UserInputType == UIT_M2) or
          (input.KeyCode == RbxMouse.Button2KeyCode)
       then
          RbxMouse.Button2 = false
+         table.remove(RbxMouse.Button2Inputs, table.find(RbxMouse.Button2Inputs, input))
          RbxMouse:FireButton2Released(os.clock()-button2DownAt, input, gameProcessed)
       elseif (input.UserInputType == UIT_M3) or
          (input.KeyCode == RbxMouse.Button3KeyCode)
       then
          RbxMouse.Button3 = false
+         table.remove(RbxMouse.Button1Inputs, table.find(RbxMouse.Button2Inputs, input))
          RbxMouse:FireButton3Released(os.clock()-button3DownAt, input, gameProcessed)
       end
    end)
