@@ -1,4 +1,4 @@
-# RbxMouse v4.0
+# RbxMouse v4.1
 
 This library provides a consistent interface for all mouse related APIs.
 Notable features:
@@ -7,11 +7,11 @@ Notable features:
 - Accurate mouse delta is provided when MouseBehavior is not LockCenter.
 - A simple stack for managing multiple mouse icons.
 - Designed to work cross-platform and in many different contexts, able to manually fire mouse-related signals and listen to touch and gamepad/keyboard input.
+- Helpers for working with touch input and button presses.
 
 # Quick Reference
 
 ```
-
 -- Properties
 
 bool RbxMouse.Button1                      [readonly]
@@ -55,8 +55,15 @@ void RbxMouse:SetSensitivity(float sensitivity)
 
 Vector2 RbxMouse:GetDelta()
 bool RbxMouse:GetEnabled()
+
 bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
 array<InputObject> RbxMouse:GetButtonsPressed()
+
+bool RbxMouse:IsTouchUsingThumbstick(InputObject inputObject)
+bool RbxMouse:IsInputNew(InputObject inputObject)
+
+bool RbxMouse:BeginSingleInput(any key, InputObject inputObject)
+void RbxMouse:EndSingleInput(any key, optional InputObject inputObject)
 
 string RbxMouse:GetIcon()
 void RbxMouse:SetIcon(string asset)
@@ -73,8 +80,6 @@ void RbxMouse:SetBehaviorEveryFrame(
    optional int renderStepPriority
 )
 void RbxMouse:StopSettingBehaviorEveryFrame()
-
-void RbxMouse:Fire<Signal>(<signalParameters>)
 
 Ray RbxMouse:GetRay(number maxDistance, <Vector2|UDim2> position)
 
@@ -96,8 +101,18 @@ Ray RbxMouse:GetRay(number maxDistance, <Vector2|UDim2> position)
       Vector3 direction
    )
 
+<void|RaycastResult> RbxMouse.Raycaster(
+   Vector3 origin,
+   Vector3 direction,
+   RaycastParams raycastParams,
+   optional function filter,
+   optional bool mutateParams
+)
+
 Vector2 RbxMouse:AbsoluteToInset(Vector2 absolutePosition)
 Vector2 RbxMouse:InsetToAbsolute(Vector2 insetPosition)
+
+void RbxMouse:Fire<Signal>(<signalParameters>)
 
 -- Filter function presets
 
@@ -224,6 +239,115 @@ RbxMouse.Moved(Vector2 delta, InputObject input, bool gameProcessed)
 ## Methods
 
 ```
+bool RbxMouse:GetVisible()
+void RbxMouse:SetVisible(bool visible)
+```
+
+   Gets and sets whether the mouse icon is visible using
+   `UserInputService.MouseIconEnabled`.
+
+---
+
+```
+float RbxMouse:GetSensitivity()
+void RbxMouse:SetSensitivity(float sensitivity)
+```
+
+   Gets and sets the mouse delta sensitivity. Mouse delta will be multiplied by
+   this value when returned from `RbxMouse:GetDelta()` and `RbxMouse.Moved`.
+   Note that this does NOT use `UserInputService.MouseDeltaSensitivity`,
+   although RbxMouse still supports this property consistently regardless of
+   MouseBehavior.
+
+---
+
+```
+Vector2 RbxMouse:GetDelta()
+```
+
+   Returns `UserInputService:GetMouseDelta()` if the mouse is locked, otherwise if
+   the mouse is free it returns the mouse delta this frame. Before being
+   returned, the delta is multiplied by the mouse sensitivity set by
+   `RbxMouse:SetSensitivity()`. Unlike the Roblox APIs, this delta will be
+   nonzero regardless of MouseBehavior (not just when it is set to
+   LockCenter).
+
+---
+
+```
+bool RbxMouse:GetEnabled()
+```
+
+   Gets `UserInputService.MouseEnabled`, which is true if the user's device has
+   a mouse available or false otherwise.
+
+---
+
+```
+bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
+```
+
+   Calls `UserInputService:IsMouseButtonPressed()`.
+
+---
+
+```
+array<InputObject> RbxMouse:GetButtonsPressed()
+```
+
+   Calls `UserInputService:GetMouseButtonsPressed()`.
+
+---
+
+```
+bool RbxMouse:IsTouchUsingThumbstick(InputObject inputObject)
+```
+
+   Returns true if the given input is currently using one of the touch
+   thumbstick controls in the core scripts. Will return false if inputObject is
+   a not a Touch input so you don't need to check that yourself. Useful if you
+   want to ignore button presses(e.g. Rbxmouse.Button1Pressed or a GUI input
+   event) from a specific touch when the player is the using the thumbstick.
+
+---
+
+```
+bool RbxMouse:IsInputNew(InputObject inputObject)
+```
+
+   Returns true if the input is new. Useful for GUI input events where
+   InputBegan will fire even if the mouse click or touch started outside of the
+   button and moved into the button later, in which case you typically don't
+   want buttons to register that as a press. This function is equivalent to
+   inputObject.UserInputState == Enum.UserInputState.Begin.
+
+---
+
+```
+bool RbxMouse:BeginSingleInput(any key, InputObject inputObject)
+```
+
+   Allows you to process only a single unique input for a specified key at a
+   time (key can be an Instance, a string, or any other value used as keys in
+   tables). Useful on mobile where the player can press multiple buttons at
+   once. Returns true if the input should be processed, false if there is
+   already another input active. Don't forget to call RbxMouse:EndSingleInput()
+   when the input is considered finished! (Or when the key needs to be garbage
+   collected to prevent memory leaks.)
+
+---
+
+```
+void RbxMouse:EndSingleInput(any key, optional InputObject inputObject)
+```
+
+   Removes a previously begun input for a specified key. The inputObject
+   parameter is optional, and if given will only remove it if it matches the
+   active input for that key.
+
+---
+
+```
 string RbxMouse:GetIcon()
 ```
 
@@ -280,16 +404,6 @@ void RbxMouse:ClearIconStack()
 ---
 
 ```
-bool RbxMouse:GetVisible()
-void RbxMouse:SetVisible(bool visible)
-```
-
-   Gets and sets whether the mouse icon is visible using
-   `UserInputService.MouseIconEnabled`.
-
----
-
-```
 MouseBehavior RbxMouse:GetBehavior()
 void RbxMouse:SetBehavior(MouseBehavior behavior)
 ```
@@ -316,97 +430,6 @@ void RbxMouse:StopSettingBehaviorEveryFrame()
 ```
 
    Unbinds the above mouse behavior callback.
-
----
-
-```
-float RbxMouse:GetSensitivity()
-void RbxMouse:SetSensitivity(float sensitivity)
-```
-
-   Gets and sets the mouse delta sensitivity. Mouse delta will be multiplied by
-   this value when returned from `RbxMouse:GetDelta()` and `RbxMouse.Moved`.
-   Note that this does NOT use `UserInputService.MouseDeltaSensitivity`,
-   although RbxMouse still supports this property consistently regardless of
-   MouseBehavior.
-
----
-
-```
-Vector2 RbxMouse:GetDelta()
-```
-
-   Returns `UserInputService:GetMouseDelta()` if the mouse is locked, otherwise if
-   the mouse is free it returns the mouse delta this frame. Before being
-   returned, the delta is multiplied by the mouse sensitivity set by
-   `RbxMouse:SetSensitivity()`. Unlike the Roblox APIs, this delta will be
-   nonzero regardless of MouseBehavior (not just when it is set to
-   LockCenter).
-
----
-
-```
-bool RbxMouse:GetEnabled()
-```
-
-   Gets `UserInputService.MouseEnabled`, which is true if the user's device has
-   a mouse available or false otherwise.
-
----
-
-```
-bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
-```
-
-   Calls `UserInputService:IsMouseButtonPressed()`.
-
----
-
-```
-array<InputObject> RbxMouse:GetButtonsPressed()
-```
-
-   Calls `UserInputService:GetMouseButtonsPressed()`.
-
----
-
-```
-void RbxMouse:Fire<Signal>(... signalParameters)
-```
-
-   Fires a RbxMouse signal with the name after 'Fire'. Signal parameters is a
-   tuple of any values which will be passed to the signal callbacks. Make sure
-   to check they are of the correct type and are in the right order.
-
-   Examples:
-   ```lua
-   RbxMouse:FireButton1Pressed(mouseButton1InputObject, true)
-
-   RbxMouse:FireButton3Released(1.5, mouseButton1InputObject, true)
-
-   RbxMouse:FireMoved(Vector2.new(10, 10), moveInputObject, true)
-   ```
-
-   Some of these signals require InputObjects, which are not creatable by
-   scripts. How you deal with is entirely up to you, as RbxMouse does not use
-   these signals internally.
-
-   For example, you could pass in a dummy table (pretending to be an InputObject
-   with the properties your callbacks use) or `nil`. Passing in `nil` may be
-   useful as a convention so that your callbacks can know when the signal has
-   been fired manually:
-
-   ```lua
-      RbxMouse.Button1Pressed:Connect(function(inputObject, gameProcessed)
-         if not inputObject then
-            -- we reach here if the signal was fired manually by your code
-         else
-            -- otherwise we know this was triggered by real user input
-         end
-      end)
-
-      RbxMouse:FireButton1Pressed(nil, true)
-   ```
 
 ---
 
@@ -534,6 +557,46 @@ Vector2 RbxMouse:InsetToAbsolute(Vector2 insetPosition)
 
 ---
 
+```
+void RbxMouse:Fire<Signal>(... signalParameters)
+```
+
+   Fires a RbxMouse signal with the name after 'Fire'. Signal parameters is a
+   tuple of any values which will be passed to the signal callbacks. Make sure
+   to check they are of the correct type and are in the right order.
+
+   Examples:
+   ```lua
+   RbxMouse:FireButton1Pressed(mouseButton1InputObject, true)
+
+   RbxMouse:FireButton3Released(1.5, mouseButton1InputObject, true)
+
+   RbxMouse:FireMoved(Vector2.new(10, 10), moveInputObject, true)
+   ```
+
+   Some of these signals require InputObjects, which are not creatable by
+   scripts. How you deal with is entirely up to you, as RbxMouse does not use
+   these signals internally.
+
+   For example, you could pass in a dummy table (pretending to be an InputObject
+   with the properties your callbacks use) or `nil`. Passing in `nil` may be
+   useful as a convention so that your callbacks can know when the signal has
+   been fired manually:
+
+   ```lua
+      RbxMouse.Button1Pressed:Connect(function(inputObject, gameProcessed)
+         if not inputObject then
+            -- we reach here if the signal was fired manually by your code
+         else
+            -- otherwise we know this was triggered by real user input
+         end
+      end)
+
+      RbxMouse:FireButton1Pressed(nil, true)
+   ```
+
+---
+
 ## Filter function presets
 
 Four predefined filter functions for use in the `filter` argument for `RbxMouse:GetTarget()` and `RbxMouse.Raycaster`.
@@ -623,6 +686,36 @@ end)
 
 RbxMouse.Button3Pressed:Connect(function()
    RbxMouse:ClearIconStack()
+end)
+```
+
+Ignoring taps on the screen when using thumbstick:
+
+```lua
+RbxMouse.Button1Pressed:Connect(function(inputObject)
+   if not RbxMouse:IsTouchUsingThumbstick(inputObject) then
+      -- Your code here
+   end
+end)
+```
+
+Only allowing a button to be pressed by a single finger at once on mobile:
+
+```lua
+local button = gui.TextButton
+
+button.InputBegan:Connect(function(inputObject)
+   if inputObject.UserInputType == Enum.UserInputType.Touch then
+      if RbxMouse:BeginSingleInput(button, inputObject) then
+         -- Your code here
+      end
+   end
+end)
+
+button.InputEnded:Connect(function(inputObject)
+   if inputObject.UserInputType == Enum.UserInputType.Touch then
+      RbxMouse:EndSingleInput(button, inputObject)
+   end
 end)
 ```
 

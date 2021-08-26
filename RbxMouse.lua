@@ -48,11 +48,15 @@ void RbxMouse:SetSensitivity(float sensitivity)
 
 Vector2 RbxMouse:GetDelta()
 bool RbxMouse:GetEnabled()
+
 bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
 array<InputObject> RbxMouse:GetButtonsPressed()
 
 bool RbxMouse:IsTouchUsingThumbstick(InputObject inputObject)
 bool RbxMouse:IsInputNew(InputObject inputObject)
+
+bool RbxMouse:BeginSingleInput(any key, InputObject inputObject)
+void RbxMouse:EndSingleInput(any key, optional InputObject inputObject)
 
 string RbxMouse:GetIcon()
 void RbxMouse:SetIcon(string asset)
@@ -69,8 +73,6 @@ void RbxMouse:SetBehaviorEveryFrame(
    optional int renderStepPriority
 )
 void RbxMouse:StopSettingBehaviorEveryFrame()
-
-void RbxMouse:Fire<Signal>(<signalParameters>)
 
 Ray RbxMouse:GetRay(number maxDistance, <Vector2|UDim2> position)
 
@@ -92,8 +94,18 @@ Ray RbxMouse:GetRay(number maxDistance, <Vector2|UDim2> position)
       Vector3 direction
    )
 
+<void|RaycastResult> RbxMouse.Raycaster(
+   Vector3 origin,
+   Vector3 direction,
+   RaycastParams raycastParams,
+   optional function filter,
+   optional bool mutateParams
+)
+
 Vector2 RbxMouse:AbsoluteToInset(Vector2 absolutePosition)
 Vector2 RbxMouse:InsetToAbsolute(Vector2 insetPosition)
+
+void RbxMouse:Fire<Signal>(<signalParameters>)
 
 -- Filter function presets
 
@@ -358,6 +370,25 @@ do
 
    function RbxMouse:IsInputNew(inputObject)
       return inputObject.UserInputState == Enum.UserInputState.Begin
+   end
+
+   local activeInputs = {}
+
+   function RbxMouse:BeginSingleInput(key, inputObject)
+      local valid = not activeInputs[key]
+      if valid then
+         activeInputs[key] = inputObject
+      end
+      return valid
+   end
+
+   function RbxMouse:EndSingleInput(key, inputObject)
+      local active = activeInputs[key]
+      if (active ~= nil) and
+         (inputObject == nil or active == inputObject)
+      then
+         activeInputs[key] = nil
+      end
    end
 end
 
