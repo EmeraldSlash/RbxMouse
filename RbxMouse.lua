@@ -1,6 +1,6 @@
 --[[
 
-RbxMouse v4.0
+RbxMouse v4.1
 https://github.com/EmeraldSlash/RbxMouse
 
 See repository for detailed documentation :)
@@ -50,6 +50,9 @@ Vector2 RbxMouse:GetDelta()
 bool RbxMouse:GetEnabled()
 bool RbxMouse:IsButtonPressed(UserInputType mouseButton)
 array<InputObject> RbxMouse:GetButtonsPressed()
+
+bool RbxMouse:IsTouchUsingThumbstick(InputObject inputObject)
+bool RbxMouse:IsInputNew(InputObject inputObject)
 
 string RbxMouse:GetIcon()
 void RbxMouse:SetIcon(string asset)
@@ -265,7 +268,7 @@ end
 
 local function invalidArgument(index, name, correctType, value, depth)
    error(("Argument %d '%s' must be a %s (received value %s of type %s).")
-         :format(index, name, correctType, tostring(value), typeof(value)), depth+1)
+      :format(index, name, correctType, tostring(value), typeof(value)), depth+1)
 end
 
 do
@@ -332,6 +335,29 @@ do
    end
    function RbxMouse:IsButtonPressed(mouseButton)
       return userInputService:IsMouseButtonPressed(mouseButton)
+   end
+end
+
+do
+   local PlayerModule = require(game:GetService("Players").LocalPlayer
+      :WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
+
+   function RbxMouse:IsTouchUsingThumbstick(inputObject)
+      local result = false
+      if inputObject.UserInputType == Enum.UserInputType.Touch then
+         local controls = PlayerModule:GetControls()
+         if controls then
+            local controller = controls:GetActiveController()
+            if controller then
+               result = (inputObject == controller.moveTouchObject)
+            end
+         end
+      end
+      return result
+   end
+
+   function RbxMouse:IsInputNew(inputObject)
+      return inputObject.UserInputState == Enum.UserInputState.Begin
    end
 end
 
