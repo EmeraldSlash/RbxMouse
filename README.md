@@ -630,7 +630,13 @@ bool RbxMouse.FILTER_VISIBLE_OR_CANCOLLIDE(RaycastResult result)
 
 # Contrived examples
 
-More complicated raycasting with any ray, RaycastParams, and a filter function:
+Perform a simple raycast, hitting anything:
+
+```lua
+local result = RbxMouse:GetTarget()
+```
+
+More complicated raycasting with RaycastParams, a filter function, and a ray:
 ```lua
 -- Ignore the player's character.
 local params = RaycastParams.new()
@@ -643,6 +649,9 @@ local ray = Ray.new(origin, direction)
 -- Only hit instances that have CanCollide = true.
 local result = RbxMouse:GetTarget(params, RbxMouse.FILTER_CANCOLLIDE, ray)
 ```
+
+As you can see, RbxMouse is flexible enough that you can use it as a
+raycasting library in its own right.
 
 Raycasting from center of screen and only hitting very specific parts:
 
