@@ -699,7 +699,24 @@ RbxMouse.Button1Pressed:Connect(function(inputObject)
 end)
 ```
 
-Only allowing a button to be pressed by a single finger at once on mobile:
+Prevent buttons being pressed by a click/tap starting elsewhere then being
+dragged onto the button:
+
+```lua
+local button = gui.TextButton
+
+button.InputBegan:Connect(function(inputObject)
+   if inputObject.UserInputType == Enum.UserInputType.Touch or
+      inputObject.UserInputType == Enum.UserInputType.MouseButton1
+   then
+      if BbxMouse:IsInputNew(inputObject) then
+         -- Your code here
+      end
+   end
+end)
+```
+
+Only allow a button to be pressed by a single finger at once on mobile:
 
 ```lua
 local button = gui.TextButton
